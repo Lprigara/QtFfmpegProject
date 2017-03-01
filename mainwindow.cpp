@@ -8,15 +8,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    initCodec();
-    formatCtx = NULL;
-    imgConvertCtx = 0;
-    videoCodecCtx = 0;
-    videoCodec = 0;
-    frame = 0;
-    frameRGB = 0;
-    buffer = 0;
-    ok=false;
+
+    //objeto que emite la señal, señal emitida, objeto que recibe la señal, accion que desencadena esa señal
+    connect(&videoDecoder, SIGNAL(signalDisplayFrame(QImage)), this, SLOT(displayFrame(QImage)));
 }
 
 MainWindow::~MainWindow()
@@ -24,220 +18,56 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-bool MainWindow::initCodec()
-{
-   avcodec_register_all();
-   av_register_all();
-
-   printf("License: %s\n",avformat_license());
-   printf("AVCodec version %d\n", avformat_version());
-   printf("AVFormat configuration: %s\n",avformat_configuration());
-
-   return true;
-}
-
-
-bool MainWindow::decodeAndDisplayFrames()
-{
-   if(!ok)
-      return false;
-
-   int frameNumber = 0;
-   while(av_read_frame(formatCtx, &packet)>=0){
-
-      if(packet.stream_index==videoStream)
-      {
-         // Is this a packet from the video stream -> decode video frame
-         int frameFinished;
-         avcodec_decode_video2(videoCodecCtx,frame,&frameFinished,&packet);
-
-         // Did we get a video frame?
-         if(frameFinished)
-         {
-            AVRational millisecondbase = {1, 1000};
-            int f = packet.dts;
-            int t = av_rescale_q(packet.dts,formatCtx->streams[videoStream]->time_base,millisecondbase);
-            lastFrameOk = false;
-
-            if(lastFrameOk==false)
-            {
-               lastFrameOk=true;
-               lastLastFrameTime=lastFrameTime=t;
-               lastLastFrameNumber=lastFrameNumber=f;
-            }
-
-            // Is this frame the desired frame?
-            if(frameNumber==-1 || lastFrameNumber>=frameNumber)
-            {
-               // It's the desired frame
-               // Convert the image format (init the context the first time)
-               int w = videoCodecCtx->width;
-               int h = videoCodecCtx->height;
-               imgConvertCtx = sws_getCachedContext(imgConvertCtx,w, h, videoCodecCtx->pix_fmt, w, h, AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
-
-               if(imgConvertCtx == NULL)
-               {
-                  qWarning() <<"Cannot initialize the conversion context!\n";
-                  return false;
-               }
-
-               sws_scale(imgConvertCtx, frame->data, frame->linesize, 0, videoCodecCtx->height, frameRGB->data, frameRGB->linesize);
-
-               // Convert the frame to QImage
-               lastFrame=QImage(w,h,QImage::Format_RGB888);
-
-               for(int y=0;y<h;y++)
-                  memcpy(lastFrame.scanLine(y),frameRGB->data[0]+y*frameRGB->linesize[0],w*3);
-
-               // Set the time
-               desiredFrameTime =av_rescale_q(frameNumber,formatCtx->streams[videoStream]->time_base,millisecondbase);
-               lastFrameOk=true;
-
-               displayFrame();
-               ui->labelVideoFrame->repaint();
-               ui->labelVideoInfo->repaint();
-
-            }
-         }  // frameFinished
-      }  // stream_index==videoStream
-    frameNumber = frameNumber +1;
-   }
-   av_free_packet(&packet);      // Free the packet that was allocated by av_read_frame
-}
-
-bool MainWindow::openFile(QString fileName) {
-
-    lastLastFrameTime=INT_MIN;       // Last last must be small to handle the seek well
-    lastFrameTime=0;
-    lastLastFrameNumber=INT_MIN;
-    lastFrameNumber=0;
-    desiredFrameTime=desiredFrameNumber=0;
-    lastFrameOk=false;
-
-    // Open video file
-    if(avformat_open_input(&formatCtx, fileName.toStdString().c_str(), NULL, NULL)!=0){
-        qWarning() << "Couldn't open file";
-        return false;
-    }
-
-    // Retrieve stream information
-    if(avformat_find_stream_info(formatCtx, NULL)<0){
-        qWarning() << "Couldn't find stream information";
-        return false;
-    }
-
-    // Dump information about file onto standard error
-    av_dump_format(formatCtx, 0, fileName.toStdString().c_str(), 0);
-
-    // Find the first video stream
-    videoStream=-1;
-    for(unsigned i=0; i<formatCtx->nb_streams; i++)
-        if(formatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
-        {
-            videoStream=i;
-            break;
-        }
-    if(videoStream==-1){
-        qWarning() << "Didn't find a video stream";
-        return false;
-    }
-
-    // Get a pointer to the codec context for the video stream
-    videoCodecCtx=formatCtx->streams[videoStream]->codec;
-
-    // Find the decoder for the video stream
-    videoCodec=avcodec_find_decoder(videoCodecCtx->codec_id);
-    if(videoCodec==NULL){
-        qWarning() << "Codec not found";
-        return false;
-    }
-
-    // Open codec
-    if(avcodec_open2(videoCodecCtx, videoCodec, NULL)<0){
-        qWarning() << "Could not open codec";
-        return false;
-    }
-
-    // Hack to correct wrong frame rates that seem to be generated by some codecs
-    if(videoCodecCtx->time_base.num>1000 && videoCodecCtx->time_base.den==1){
-        videoCodecCtx->time_base.den=1000;
-    }
-    // Allocate video frame
-    frame=av_frame_alloc();
-
-    // Allocate an AVFrame structure
-    frameRGB=av_frame_alloc();
-    if(frameRGB==NULL)
-        return false;
-
-    // Determine required buffer size and allocate buffer
-    numBytes=avpicture_get_size(AV_PIX_FMT_RGB24, videoCodecCtx->width,videoCodecCtx->height);
-    buffer=new uint8_t[numBytes];
-
-    // Assign appropriate parts of buffer to image planes in pFrameRGB
-    avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24,
-      videoCodecCtx->width, videoCodecCtx->height);
-
-    ok=true;
-    return true;
-}
-
 void MainWindow::on_actionAbrir_triggered()
 {
-    int i=0;
-    i=i+6;
     QString fileName = QFileDialog::getOpenFileName(this, "Abrir archivo", QString() ,"Video (*.mjpeg *.mp4 *avi)"); //te devuelve el nombre del archivo
     if (!fileName.isEmpty())
-        loadVideo(fileName);
+        openFile(fileName);
 }
 
-void MainWindow::loadVideo(QString fileName)
-{
-   openFile(fileName);
-   if(isOk()==false)
-   {
-      QMessageBox::critical(this,"Error","Error loading the video");
-      return;
-   }
+void MainWindow::openFile(QString fileName) {
 
-   decodeAndDisplayFrames();
-}
+    videoDecoder.loadVideo(fileName);
 
-void MainWindow::displayFrame()
-{
-    if(isOk()==false)
+    if(videoDecoder.isOk()==false)
     {
+       QMessageBox::critical(this,"Error","Error loading the video");
+       return;
+    }
+
+    videoDecoder.decodeAndDisplayFrames();
+}
+
+void MainWindow::displayFrame(QImage image)
+{
+    if(videoDecoder.isOk()==false){
        QMessageBox::critical(this,"Error","Load a video first");
        return;
     }
 
-   QImage img =lastFrame;
-
    // Decode a frame
-   if(!lastFrameOk)
-   {
+   if(!videoDecoder.isLastFrameOk()){
       QMessageBox::critical(this,"Error","Error decoding the frame");
       return;
    }
-   // Convert the QImage to a QPixmap for display
 
-   QPixmap p;
-   image2Pixmap(img,p);
+   // Convert the QImage to a QPixmap for display
+   QPixmap pixmap;
+   convertImageToPixmap(image,pixmap);
 
    // Display the QPixmap
-   ui->labelVideoFrame->setPixmap(p);
+   ui->labelVideoFrame->setPixmap(pixmap);
 
    // Display the video size
-   ui->labelVideoInfo->setText(QString("Display: #%3 @ %4 ms.").arg(lastFrameNumber).arg(lastFrameTime));
+   ui->labelVideoInfo->setText(QString("Display: #%3 @ %4 ms.").arg(videoDecoder.getLastFrameNumber()).arg(videoDecoder.getLastFrameTime()));
+
+   //Repaint
+   ui->labelVideoFrame->repaint();
+   ui->labelVideoInfo->repaint();
 
 }
 
-bool MainWindow::isOk()
-{
-   return ok;
-}
-
-void MainWindow::image2Pixmap(QImage &img,QPixmap &pixmap)
+void MainWindow::convertImageToPixmap(QImage &img,QPixmap &pixmap)
 {
    // Convert the QImage to a QPixmap for display
    pixmap = QPixmap(img.size());

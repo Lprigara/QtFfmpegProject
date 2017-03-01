@@ -25,9 +25,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    videodecoder.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    videodecoder.h
 
 FORMS    += mainwindow.ui
 
