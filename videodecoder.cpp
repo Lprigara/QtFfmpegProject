@@ -3,6 +3,11 @@
 videoDecoder::videoDecoder(QObject *parent) : QObject(parent)
 {
     initCodec();
+    initVariables();
+}
+
+/***************** INIT VARIABLES AND CODECS *******************************/
+void videoDecoder::initVariables(){
     formatCtx = NULL;
     imgConvertCtx = 0;
     videoCodecCtx = 0;
@@ -11,6 +16,7 @@ videoDecoder::videoDecoder(QObject *parent) : QObject(parent)
     frameRGB = 0;
     buffer = 0;
     ok=false;
+    videoFinished = false;
 }
 
 bool videoDecoder::initCodec()
@@ -24,6 +30,7 @@ bool videoDecoder::initCodec()
 
    return true;
 }
+/****************************************************************************/
 
 bool videoDecoder::loadVideo(QString fileName){
     lastFrameTime=0;
@@ -99,71 +106,93 @@ bool videoDecoder::loadVideo(QString fileName){
     return true;
 }
 
-bool videoDecoder::decodeAndDisplayFrames(){
+bool videoDecoder::readNextFrame(){
+    if(av_read_frame(formatCtx, &packet)>=0)
+        return true;
+    else{
+        videoFinished = true;
+        return false;
+    }
+}
 
-   if(!ok)
-      return false;
+void videoDecoder::decodeFrame(int frameNumber){
 
-   int frameNumber = 0;
-   while(av_read_frame(formatCtx, &packet)>=0){
+    // Is this a packet from the video stream -> decode video frame
+    int frameFinished;
+    avcodec_decode_video2(videoCodecCtx,frame,&frameFinished,&packet);
 
-      if(packet.stream_index==videoStream){
-         // Is this a packet from the video stream -> decode video frame
-         int frameFinished;
-         avcodec_decode_video2(videoCodecCtx,frame,&frameFinished,&packet);
+    // Did we get a video frame?
+    if(frameFinished){
+       AVRational millisecondbase = {1, 1000};
+       int f = packet.dts;
+       int t = av_rescale_q(packet.dts,formatCtx->streams[videoStream]->time_base,millisecondbase);
+       lastFrameOk = false;
 
-         // Did we get a video frame?
-         if(frameFinished){
-            AVRational millisecondbase = {1, 1000};
-            int f = packet.dts;
-            int t = av_rescale_q(packet.dts,formatCtx->streams[videoStream]->time_base,millisecondbase);
-            lastFrameOk = false;
+       if(lastFrameOk==false){
+          lastFrameOk=true;
+          lastFrameTime=t;
+          lastFrameNumber=f;
+       }
 
-            if(lastFrameOk==false){
-               lastFrameOk=true;
-               lastFrameTime=t;
-               lastFrameNumber=f;
-            }
+       // Is this frame the desired frame?
+       if(frameNumber==-1 || lastFrameNumber>=frameNumber){
+          // It's the desired frame
+          // Convert the image format (init the context the first time)
+          int width = videoCodecCtx->width;
+          int height = videoCodecCtx->height;
+          imgConvertCtx = sws_getCachedContext(imgConvertCtx,width, height, videoCodecCtx->pix_fmt, width, height, AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
 
-            // Is this frame the desired frame?
-            if(frameNumber==-1 || lastFrameNumber>=frameNumber){
-               // It's the desired frame
-               // Convert the image format (init the context the first time)
-               int width = videoCodecCtx->width;
-               int height = videoCodecCtx->height;
-               imgConvertCtx = sws_getCachedContext(imgConvertCtx,width, height, videoCodecCtx->pix_fmt, width, height, AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
+          if(imgConvertCtx == NULL)
+          {
+             qWarning() <<"Cannot initialize the conversion context!\n";
+             return;
+          }
 
-               if(imgConvertCtx == NULL)
-               {
-                  qWarning() <<"Cannot initialize the conversion context!\n";
-                  return false;
-               }
+          sws_scale(imgConvertCtx, frame->data, frame->linesize, 0, height, frameRGB->data, frameRGB->linesize);
 
-               sws_scale(imgConvertCtx, frame->data, frame->linesize, 0, height, frameRGB->data, frameRGB->linesize);
+          // Convert the frame to QImage
+          lastFrame=QImage(width,height,QImage::Format_RGB888);
 
-               // Convert the frame to QImage
-               lastFrame=QImage(width,height,QImage::Format_RGB888);
+          for(int y=0;y<height;y++)
+             memcpy(lastFrame.scanLine(y),frameRGB->data[0]+y*frameRGB->linesize[0],width*3);
 
-               for(int y=0;y<height;y++)
-                  memcpy(lastFrame.scanLine(y),frameRGB->data[0]+y*frameRGB->linesize[0],width*3);
-
-               // Set the time
-               desiredFrameTime =av_rescale_q(frameNumber,formatCtx->streams[videoStream]->time_base,millisecondbase);
-               lastFrameOk=true;
-
-               emit signalDisplayFrame(lastFrame);
-            }
-         }  // frameFinished
-      }  // stream_index==videoStream
-    frameNumber = frameNumber +1;
-   }
-   av_free_packet(&packet);      // Free the packet that was allocated by av_read_frame
+          // Set the time
+          desiredFrameTime =av_rescale_q(frameNumber,formatCtx->streams[videoStream]->time_base,millisecondbase);
+          lastFrameOk=true;
+       }
+    }  // frameFinished
 }
 
 
+/**********CLEAN AND CLOSE**************/
+void videoDecoder::closeVideoAndClean()
+{
+   // Free the RGB image
+   if(buffer)
+      delete [] buffer;
+
+   // Free the YUV frame
+   if(frame)
+      av_free(frame);
+
+   // Free the RGB frame
+   if(frameRGB)
+      av_free(frameRGB);
+
+   // Close the codec
+   if(videoCodecCtx)
+      avcodec_close(videoCodecCtx);
+
+   // Close the video file
+   if(formatCtx)
+      avformat_close_input(&formatCtx);
+
+   initVariables();
+}
+
 /**********GETTERS Y SETTERS************/
 
-QImage videoDecoder::getLastFrame(){
+QImage videoDecoder::getFrame(){
     return lastFrame;
 }
 
@@ -179,7 +208,14 @@ int videoDecoder::getLastFrameNumber(){
     return lastFrameNumber;
 }
 
-bool videoDecoder::isOk()
-{
+bool videoDecoder::isOk(){
    return ok;
+}
+
+bool videoDecoder::isVideoFinished(){
+    return videoFinished;
+}
+
+bool videoDecoder::isVideoStream(){
+    return packet.stream_index==videoStream;
 }

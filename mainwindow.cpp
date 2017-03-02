@@ -9,8 +9,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    //objeto que emite la señal, señal emitida, objeto que recibe la señal, accion que desencadena esa señal
-    connect(&videoDecoder, SIGNAL(signalDisplayFrame(QImage)), this, SLOT(displayFrame(QImage)));
+    initVariables();
+    ui->playPauseButton->setVisible(false);
+    ui->stopButton->setVisible(false);
+    videoStopped = false;
 }
 
 MainWindow::~MainWindow()
@@ -18,14 +20,13 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_actionAbrir_triggered()
-{
-    QString fileName = QFileDialog::getOpenFileName(this, "Abrir archivo", QString() ,"Video (*.mjpeg *.mp4 *avi)"); //te devuelve el nombre del archivo
-    if (!fileName.isEmpty())
-        openFile(fileName);
+void MainWindow::initVariables(){
+    pause = false;
+    lastFrameProcessed = 0;
 }
 
-void MainWindow::openFile(QString fileName) {
+void MainWindow::loadVideo() {
+    videoDecoder.closeVideoAndClean();
 
     videoDecoder.loadVideo(fileName);
 
@@ -35,7 +36,13 @@ void MainWindow::openFile(QString fileName) {
        return;
     }
 
-    videoDecoder.decodeAndDisplayFrames();
+    ui->playPauseButton->setVisible(true);
+    ui->playPauseButton->setIcon(QIcon(":pauseIcon.png"));
+    ui->playPauseButton->adjustSize();
+    ui->stopButton->setVisible(true);
+    ui->stopButton->setIcon(QIcon(":stopIcon.png"));
+    ui->stopButton->adjustSize();
+    processVideo();
 }
 
 void MainWindow::displayFrame(QImage image)
@@ -44,12 +51,6 @@ void MainWindow::displayFrame(QImage image)
        QMessageBox::critical(this,"Error","Load a video first");
        return;
     }
-
-   // Decode a frame
-   if(!videoDecoder.isLastFrameOk()){
-      QMessageBox::critical(this,"Error","Error decoding the frame");
-      return;
-   }
 
    // Convert the QImage to a QPixmap for display
    QPixmap pixmap;
@@ -67,12 +68,78 @@ void MainWindow::displayFrame(QImage image)
 
 }
 
-void MainWindow::convertImageToPixmap(QImage &img,QPixmap &pixmap)
+void MainWindow::convertImageToPixmap(QImage &image,QPixmap &pixmap)
 {
    // Convert the QImage to a QPixmap for display
-   pixmap = QPixmap(img.size());
+   pixmap = QPixmap(image.size());
    QPainter painter;
    painter.begin(&pixmap);
-   painter.drawImage(0,0,img);
+   painter.drawImage(0,0,image);
    painter.end();
+}
+
+void MainWindow::processVideo(){
+
+    while(pause == false && videoDecoder.readNextFrame()){
+        QApplication::processEvents();
+        if(videoStopped == true){ return; }
+        if(videoDecoder.isVideoStream()){
+            videoDecoder.decodeFrame(lastFrameProcessed);
+            QImage image = videoDecoder.getFrame();
+            displayFrame(image);
+        }
+
+        lastFrameProcessed ++;
+    }
+
+    if(videoDecoder.isVideoFinished())
+       finishVideo();
+}
+
+void MainWindow::finishVideo() {
+    initVariables();
+    ui->playPauseButton->setIcon(QIcon(":playIcon.png"));
+    ui->playPauseButton->adjustSize();
+    ui->labelVideoFrame->clear();
+    ui->labelVideoInfo->clear();
+    videoStopped = true;
+}
+
+/************************** SLOTS ********************************/
+void MainWindow::on_stopButton_clicked()
+{
+    videoStopped = true;
+    finishVideo();
+}
+
+void MainWindow::on_playPauseButton_clicked()
+{
+    if(videoStopped == true){
+        videoStopped = false;
+        ui->playPauseButton->setIcon(QIcon(":pauseIcon.png"));
+        ui->playPauseButton->adjustSize();
+        loadVideo();
+        return;
+    }
+
+    if(pause){
+        pause = false;
+        ui->playPauseButton->setIcon(QIcon(":pauseIcon.png"));
+        ui->playPauseButton->adjustSize();
+        processVideo();
+    }else{
+        pause = true;
+        ui->playPauseButton->setIcon(QIcon(":playIcon.png"));
+        ui->playPauseButton->adjustSize();
+        return;
+    }
+}
+
+void MainWindow::on_actionAbrir_triggered()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, "Abrir archivo", QString() ,"Video (*.mjpeg *.mp4 *avi)"); //te devuelve el nombre del archivo
+    if (!fileName.isEmpty()){
+        this->fileName = fileName;
+        loadVideo();
+    }
 }

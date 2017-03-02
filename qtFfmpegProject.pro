@@ -35,7 +35,7 @@ FORMS    += mainwindow.ui
 
 QMAKE_CXXFLAGS += -D__STDC_CONSTANT_MACROS
 
-LIBS += -Lffmpeg\lib
+LIBS += -LC:\Users\Leonor\Desktop\ffmpeg\ffmpeg\lib
 LIBS += -lavdevice
 LIBS += -lavfilter
 LIBS += -lavformat
@@ -47,3 +47,6 @@ LIBS += -lavutil
 LIBS += -lm
 
 INCLUDEPATH += ffmpeg/include
+
+RESOURCES += \
+    recursos.qrc

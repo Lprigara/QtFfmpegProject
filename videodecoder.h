@@ -2,9 +2,6 @@
 #define VIDEODECODER_H
 
 #include <QObject>
-#include <QFileDialog>
-#include <QVideoFrame>
-#include <QPainter>
 #include <QMessageBox>
 #include <QDebug>
 
@@ -19,19 +16,21 @@ class videoDecoder : public QObject
     Q_OBJECT
 public:
     explicit videoDecoder(QObject *parent = 0);
-    bool loadVideo(QString fileName);
-    bool isOk();
-    bool decodeAndDisplayFrames();
+    void initVariables();
     bool initCodec();
-    int getVideoLengthMs();
-    void dumpFormat(AVFormatContext *ic, int index, const char *url, int is_output);
-    QImage getLastFrame();
+
+    bool loadVideo(QString fileName);
+    void decodeFrame(int frameNumber);
+    bool readNextFrame();
+    void closeVideoAndClean();
+
+    QImage getFrame();
     bool isLastFrameOk();
     int getLastFrameTime();
     int getLastFrameNumber();
-
-signals:
-    void signalDisplayFrame(QImage lastFrame);
+    bool isVideoStream();
+    bool isOk();
+    bool isVideoFinished();
 
 private:
     AVFormatContext *formatCtx;
@@ -47,7 +46,7 @@ private:
     int lastFrameTime,lastFrameNumber;
     QImage lastFrame;
     AVPacket packet;
-
+    bool videoFinished;
 };
 
 #endif // VIDEODECODE_H
