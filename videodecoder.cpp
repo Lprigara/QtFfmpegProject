@@ -17,6 +17,8 @@ void videoDecoder::initVariables(){
     buffer = 0;
     ok=false;
     videoFinished = false;
+    audioFrame = 0;
+    resampleCtx = NULL;
 }
 
 bool videoDecoder::initCodec()
@@ -53,38 +55,180 @@ bool videoDecoder::loadVideo(QString fileName){
     // Dump information about file onto standard error
     av_dump_format(formatCtx, 0, fileName.toStdString().c_str(), 0);
 
-    // Find the first video stream
     videoStream=-1;
-    for(unsigned i=0; i<formatCtx->nb_streams; i++)
-        if(formatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
-        {
+    audioStream=-1;
+    // Find the video/audio streams
+    for(unsigned i=0; i<formatCtx->nb_streams; i++){
+        if(formatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO){
             videoStream=i;
-            break;
         }
+        if(formatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_AUDIO){
+            audioStream=i;
+        }
+    }
     if(videoStream==-1){
         qWarning() << "Didn't find a video stream";
         return false;
     }
+    if(audioStream==-1){
+        qWarning() << "Didn't find a audio stream";
+        return false;
+    }
 
+    ok=true;
+    return true;
+}
+
+bool videoDecoder::readNextFrame(){
+    if(av_read_frame(formatCtx, &packet)>=0)
+        return true;
+    else{
+        videoFinished = true;
+        return false;
+    }
+}
+
+
+/***************************** AUDIO ****************************************/
+
+bool videoDecoder::findAudioCodec(){
+    // Get a pointer to the codec context for the audio stream
+    audioCodecCtx=formatCtx->streams[audioStream]->codec;
+
+    //Find the decoder for the audio stream
+    audioCodec=avcodec_find_decoder(audioCodecCtx->codec_id);
+    if(audioCodec == NULL){
+        qWarning()<< "Audio codec not found";
+    }
+
+    if(avcodec_open2(audioCodecCtx, audioCodec, NULL)<0){
+        qWarning() << "Could not open audio codec";
+        return false;
+    }
+}
+
+void videoDecoder::setAudioFormat(){
+    ao_initialize();
+
+    driver = ao_default_driver_id();
+    info = ao_driver_info(driver);
+
+    sformat.bits=16;
+    sformat.channels=audioCodecCtx->channels;
+    sformat.rate=audioCodecCtx->sample_rate;
+    sformat.matrix=0;
+    sformat.byte_format=info->preferred_byte_format;
+
+    adevice=ao_open_live(driver,&sformat,NULL);
+
+    if(adevice ==NULL){
+        qWarning()<<"Error opening device";
+        return;
+    }
+
+    if (!(resampleCtx = avresample_alloc_context())) {
+       fprintf(stderr, "Could not allocate resample context\n");
+       return;
+   }
+
+    // The file channels.
+    av_opt_set_int(resampleCtx, "in_channel_layout", av_get_default_channel_layout(audioCodecCtx->channels), 0);
+    // The device channels.
+    av_opt_set_int(resampleCtx, "out_channel_layout",av_get_default_channel_layout(audioCodecCtx->channels), 0);
+    // The file sample rate.
+    av_opt_set_int(resampleCtx, "in_sample_rate", audioCodecCtx->sample_rate, 0);
+    // The device sample rate.
+    av_opt_set_int(resampleCtx, "out_sample_rate", audioCodecCtx->sample_rate, 0);
+    // The file bit-dpeth.
+    av_opt_set_int(resampleCtx, "in_sample_fmt", audioCodecCtx->sample_fmt, 0);
+
+    av_opt_set_int(resampleCtx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
+
+    // And now open the resampler. Hopefully all went well.
+    if (avresample_open(resampleCtx) < 0) {
+        qDebug() << "Could not open resample context.";
+        avresample_free(&resampleCtx);
+        return;
+    }
+
+    avformat_seek_file(formatCtx, 0, 0, 0, 0, 0);
+
+    // We need to use this "getter" for the output sample format.
+    av_opt_get_int(resampleCtx, "out_sample_fmt", 0, &out_sample_fmt);
+
+    av_init_packet(&packet);
+
+    audioFrame=av_frame_alloc();
+
+    frameFinished=0;
+}
+
+
+void videoDecoder::decodeAndPlayAudioSample(){
+
+    avcodec_decode_audio4(audioCodecCtx,audioFrame,&frameFinished,&packet);
+    if(frameFinished){
+        out_samples = avresample_get_out_samples(resampleCtx, audioFrame->nb_samples);
+
+       // Allocate our output buffer.
+       av_samples_alloc(&output, &out_linesize, sformat.channels,
+               out_samples, (AVSampleFormat)out_sample_fmt, 0);
+
+       // Resample the audio data and store it in our output buffer.
+       out_samples = avresample_convert(resampleCtx, &output,
+               out_linesize, out_samples, audioFrame->extended_data,
+               audioFrame->linesize[0], audioFrame->nb_samples);
+
+       int ret = avresample_available(resampleCtx);
+       if (ret)
+          fprintf(stderr, "%d converted samples left over\n", ret);
+
+        ao_play(adevice, (char*)output, out_samples*4);
+    }
+    //free(output);
+}
+
+void videoDecoder::checkDelays(){
+    int out_delay = avresample_get_delay(resampleCtx);
+    while (out_delay) {
+        fprintf(stderr, "Flushed %d delayed resampler samples.\n", out_delay);
+
+        // You get rid of the remaining data by "resampling" it with a NULL
+        // input.
+        out_samples = avresample_get_out_samples(resampleCtx, out_delay);
+        av_samples_alloc(&output, &out_linesize, sformat.channels,
+                out_delay, (AVSampleFormat)out_sample_fmt, 0);
+        out_delay = avresample_convert(resampleCtx, &output, out_linesize,
+                out_delay, NULL, 0, 0);
+        free(output);
+    }
+}
+
+/*******************************************************************************/
+/***************************** VIDEO *******************************************/
+bool videoDecoder::findVideoCodec(){
     // Get a pointer to the codec context for the video stream
     videoCodecCtx=formatCtx->streams[videoStream]->codec;
 
     // Find the decoder for the video stream
     videoCodec=avcodec_find_decoder(videoCodecCtx->codec_id);
     if(videoCodec==NULL){
-        qWarning() << "Codec not found";
+        qWarning() << "Video codec not found";
         return false;
     }
 
     // Open codec
     if(avcodec_open2(videoCodecCtx, videoCodec, NULL)<0){
-        qWarning() << "Could not open codec";
+        qWarning() << "Could not open video codec";
         return false;
     }
+}
+
+bool videoDecoder::getFramesBufferVideo(){
 
     // Hack to correct wrong frame rates that seem to be generated by some codecs
     if(videoCodecCtx->time_base.num>1000 && videoCodecCtx->time_base.den==1){
-        videoCodecCtx->time_base.den=1000;
+        videoCodecCtx->time_base.den=5000;
     }
     // Allocate video frame
     frame=av_frame_alloc();
@@ -101,36 +245,24 @@ bool videoDecoder::loadVideo(QString fileName){
     // Assign appropriate parts of buffer to image planes in pFrameRGB
     avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24,
       videoCodecCtx->width, videoCodecCtx->height);
-
-    ok=true;
-    return true;
-}
-
-bool videoDecoder::readNextFrame(){
-    if(av_read_frame(formatCtx, &packet)>=0)
-        return true;
-    else{
-        videoFinished = true;
-        return false;
-    }
 }
 
 void videoDecoder::decodeFrame(int frameNumber){
+    int frameFinished1;
 
     // Is this a packet from the video stream -> decode video frame
-    int frameFinished;
-    avcodec_decode_video2(videoCodecCtx,frame,&frameFinished,&packet);
+    avcodec_decode_video2(videoCodecCtx,frame,&frameFinished1,&packet);
 
     // Did we get a video frame?
-    if(frameFinished){
-       AVRational millisecondbase = {1, 1000};
+    if(frameFinished1){
+      // AVRational millisecondbase = {1, 1000};
        int f = packet.dts;
-       int t = av_rescale_q(packet.dts,formatCtx->streams[videoStream]->time_base,millisecondbase);
+      // int t = av_rescale_q(packet.dts,formatCtx->streams[videoStream]->time_base,millisecondbase);
        lastFrameOk = false;
 
        if(lastFrameOk==false){
           lastFrameOk=true;
-          lastFrameTime=t;
+        //  lastFrameTime=t;
           lastFrameNumber=f;
        }
 
@@ -157,12 +289,11 @@ void videoDecoder::decodeFrame(int frameNumber){
              memcpy(lastFrame.scanLine(y),frameRGB->data[0]+y*frameRGB->linesize[0],width*3);
 
           // Set the time
-          desiredFrameTime =av_rescale_q(frameNumber,formatCtx->streams[videoStream]->time_base,millisecondbase);
+         // desiredFrameTime =av_rescale_q(frameNumber,formatCtx->streams[videoStream]->time_base,millisecondbase);
           lastFrameOk=true;
        }
     }  // frameFinished
 }
-
 
 /**********CLEAN AND CLOSE**************/
 void videoDecoder::closeVideoAndClean()
@@ -179,6 +310,9 @@ void videoDecoder::closeVideoAndClean()
    if(frameRGB)
       av_free(frameRGB);
 
+   if(audioFrame)
+       av_free(audioFrame);
+
    // Close the codec
    if(videoCodecCtx)
       avcodec_close(videoCodecCtx);
@@ -186,6 +320,8 @@ void videoDecoder::closeVideoAndClean()
    // Close the video file
    if(formatCtx)
       avformat_close_input(&formatCtx);
+
+   ao_shutdown();
 
    initVariables();
 }
@@ -218,4 +354,8 @@ bool videoDecoder::isVideoFinished(){
 
 bool videoDecoder::isVideoStream(){
     return packet.stream_index==videoStream;
+}
+
+bool videoDecoder::isAudioStream(){
+    return packet.stream_index==audioStream;
 }

@@ -29,7 +29,7 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void loadVideo();
+    void loadMultimediaContent();
     void convertImageToPixmap(QImage &img,QPixmap &pixmap);
     void processVideo();
     void displayFrame(QImage image);
@@ -43,7 +43,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    videoDecoder videoDecoder;
+    videoDecoder videoDecoder_;
     bool pause;
     int lastFrameProcessed;
     bool videoStopped;

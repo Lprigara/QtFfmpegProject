@@ -25,12 +25,12 @@ void MainWindow::initVariables(){
     lastFrameProcessed = 0;
 }
 
-void MainWindow::loadVideo() {
-    videoDecoder.closeVideoAndClean();
+void MainWindow::loadMultimediaContent() {
+    videoDecoder_.closeVideoAndClean();
 
-    videoDecoder.loadVideo(fileName);
+    videoDecoder_.loadVideo(fileName);
 
-    if(videoDecoder.isOk()==false)
+    if(videoDecoder_.isOk()==false)
     {
        QMessageBox::critical(this,"Error","Error loading the video");
        return;
@@ -42,12 +42,18 @@ void MainWindow::loadVideo() {
     ui->stopButton->setVisible(true);
     ui->stopButton->setIcon(QIcon(":stopIcon.png"));
     ui->stopButton->adjustSize();
+
+    videoDecoder_.findAudioCodec();
+    videoDecoder_.setAudioFormat();
+    videoDecoder_.findVideoCodec();
+    videoDecoder_.getFramesBufferVideo();
+
     processVideo();
 }
 
 void MainWindow::displayFrame(QImage image)
 {
-    if(videoDecoder.isOk()==false){
+    if(videoDecoder_.isOk()==false){
        QMessageBox::critical(this,"Error","Load a video first");
        return;
     }
@@ -60,7 +66,7 @@ void MainWindow::displayFrame(QImage image)
    ui->labelVideoFrame->setPixmap(pixmap);
 
    // Display the video size
-   ui->labelVideoInfo->setText(QString("Display: #%3 @ %4 ms.").arg(videoDecoder.getLastFrameNumber()).arg(videoDecoder.getLastFrameTime()));
+   ui->labelVideoInfo->setText(QString("Display: #%3 @ %4 ms.").arg(videoDecoder_.getLastFrameNumber()).arg(videoDecoder_.getLastFrameTime()));
 
    //Repaint
    ui->labelVideoFrame->repaint();
@@ -80,19 +86,26 @@ void MainWindow::convertImageToPixmap(QImage &image,QPixmap &pixmap)
 
 void MainWindow::processVideo(){
 
-    while(pause == false && videoDecoder.readNextFrame()){
+    while(pause == false && videoDecoder_.readNextFrame()){
         QApplication::processEvents();
         if(videoStopped == true){ return; }
-        if(videoDecoder.isVideoStream()){
-            videoDecoder.decodeFrame(lastFrameProcessed);
-            QImage image = videoDecoder.getFrame();
+
+        if(videoDecoder_.isVideoStream()){
+            videoDecoder_.decodeFrame(lastFrameProcessed);
+            QImage image = videoDecoder_.getFrame();
             displayFrame(image);
+        }
+
+        if(videoDecoder_.isAudioStream()){
+            videoDecoder_.decodeAndPlayAudioSample();
         }
 
         lastFrameProcessed ++;
     }
 
-    if(videoDecoder.isVideoFinished())
+    videoDecoder_.checkDelays();
+
+    if(videoDecoder_.isVideoFinished())
        finishVideo();
 }
 
@@ -118,7 +131,7 @@ void MainWindow::on_playPauseButton_clicked()
         videoStopped = false;
         ui->playPauseButton->setIcon(QIcon(":pauseIcon.png"));
         ui->playPauseButton->adjustSize();
-        loadVideo();
+        loadMultimediaContent();
         return;
     }
 
@@ -140,6 +153,6 @@ void MainWindow::on_actionAbrir_triggered()
     QString fileName = QFileDialog::getOpenFileName(this, "Abrir archivo", QString() ,"Video (*.mjpeg *.mp4 *avi)"); //te devuelve el nombre del archivo
     if (!fileName.isEmpty()){
         this->fileName = fileName;
-        loadVideo();
+        loadMultimediaContent();
     }
 }
