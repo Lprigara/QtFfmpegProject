@@ -1,4 +1,5 @@
 #include "videodecoder.h"
+#include <QThread>
 
 videoDecoder::videoDecoder(QObject *parent) : QObject(parent)
 {
@@ -19,6 +20,8 @@ void videoDecoder::initVariables(){
     videoFinished = false;
     audioFrame = 0;
     resampleCtx = NULL;
+    lastFrameDelay=0;
+    lastFramePts =0;
 }
 
 bool videoDecoder::initCodec()
@@ -99,12 +102,15 @@ bool videoDecoder::findAudioCodec(){
     audioCodec=avcodec_find_decoder(audioCodecCtx->codec_id);
     if(audioCodec == NULL){
         qWarning()<< "Audio codec not found";
+        return false;
     }
 
     if(avcodec_open2(audioCodecCtx, audioCodec, NULL)<0){
         qWarning() << "Could not open audio codec";
         return false;
     }
+
+    return true;
 }
 
 void videoDecoder::setAudioFormat(){
@@ -222,6 +228,9 @@ bool videoDecoder::findVideoCodec(){
         qWarning() << "Could not open video codec";
         return false;
     }
+
+    video_st = formatCtx->streams[videoStream];
+    return true;
 }
 
 bool videoDecoder::getFramesBufferVideo(){
@@ -245,7 +254,11 @@ bool videoDecoder::getFramesBufferVideo(){
     // Assign appropriate parts of buffer to image planes in pFrameRGB
     avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24,
       videoCodecCtx->width, videoCodecCtx->height);
+
+    return true;
 }
+
+
 
 void videoDecoder::decodeFrame(int frameNumber){
     int frameFinished1;
@@ -253,18 +266,21 @@ void videoDecoder::decodeFrame(int frameNumber){
     // Is this a packet from the video stream -> decode video frame
     avcodec_decode_video2(videoCodecCtx,frame,&frameFinished1,&packet);
 
+    //Pruebas reproducción slowmotion
+    /*double pts = 0, delay;
+    pts = av_frame_get_best_effort_timestamp(frame);
+    if(pts == AV_NOPTS_VALUE )
+        pts = 0;
+    pts = av_q2d(video_st->time_base);
+    delay = pts - lastFramePts;
+    QThread::msleep(delay);*/
+
     // Did we get a video frame?
     if(frameFinished1){
-      // AVRational millisecondbase = {1, 1000};
-       int f = packet.dts;
-      // int t = av_rescale_q(packet.dts,formatCtx->streams[videoStream]->time_base,millisecondbase);
-       lastFrameOk = false;
+//        lastFrameDelay = delay;
+//        lastFramePts = pts;
 
-       if(lastFrameOk==false){
-          lastFrameOk=true;
-        //  lastFrameTime=t;
-          lastFrameNumber=f;
-       }
+       lastFrameNumber=packet.dts;
 
        // Is this frame the desired frame?
        if(frameNumber==-1 || lastFrameNumber>=frameNumber){
@@ -328,7 +344,7 @@ void videoDecoder::closeVideoAndClean()
 
 /**********GETTERS Y SETTERS************/
 
-QImage videoDecoder::getFrame(){
+QImage videoDecoder::getImage(){
     return lastFrame;
 }
 
@@ -336,8 +352,14 @@ bool videoDecoder::isLastFrameOk(){
     return lastFrameOk;
 }
 
-int videoDecoder::getLastFrameTime(){
+int64_t videoDecoder::getLastFrameTime(){
+    AVRational millisecondbase = {1, 1000};
+    lastFrameTime= av_rescale_q(packet.dts,formatCtx->streams[videoStream]->time_base,millisecondbase);
     return lastFrameTime;
+}
+
+int64_t videoDecoder::getVideoDuration(){
+    return formatCtx->duration;
 }
 
 int videoDecoder::getLastFrameNumber(){

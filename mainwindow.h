@@ -35,19 +35,24 @@ public:
     void displayFrame(QImage image);
     void finishVideo();
     void initVariables();
+    void play();
+    void pause();
+    QString printFormatedTime(int64_t time);
 
 private slots:
     void on_actionAbrir_triggered();
     void on_stopButton_clicked();
     void on_playPauseButton_clicked();
+    void on_getImageButton_clicked();
 
 private:
     Ui::MainWindow *ui;
     videoDecoder videoDecoder_;
-    bool pause;
+    bool videoPaused;
     int lastFrameProcessed;
     bool videoStopped;
     QString fileName;
+    uint64_t videoDuration;
 
 signals:
 };

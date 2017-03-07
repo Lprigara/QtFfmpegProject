@@ -30,9 +30,10 @@ public:
     bool findAudioCodec();
     bool findVideoCodec();
 
-    QImage getFrame();
+    QImage getImage();
     bool isLastFrameOk();
-    int getLastFrameTime();
+    int64_t getLastFrameTime();
+    int64_t getVideoDuration();
     int getLastFrameNumber();
     bool isVideoStream();
     bool isAudioStream();
@@ -56,7 +57,8 @@ private:
     bool ok;
     int desiredFrameTime;
     bool lastFrameOk;
-    int lastFrameTime,lastFrameNumber;
+    int64_t lastFrameTime;
+    int lastFrameNumber;
     QImage lastFrame;
     AVPacket packet;
     bool videoFinished;
@@ -70,6 +72,11 @@ private:
     ao_info* info;
     int driver;
     ao_device *adevice;
+    AVStream *video_st;
+    double lastFrameDelay, lastFramePts;
+
+signals:
+    void sleepe(double);
 };
 
 #endif // VIDEODECODE_H
