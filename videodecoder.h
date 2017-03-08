@@ -4,6 +4,9 @@
 #include <QObject>
 #include <QMessageBox>
 #include <QDebug>
+#include <QFile>
+
+#include "videoinfo.h"
 
 extern "C" {
     #include <libavcodec/avcodec.h>
@@ -12,6 +15,7 @@ extern "C" {
     #include <libavresample/avresample.h>
     #include <ao/ao.h>
     #include <libavutil/opt.h>
+    #include <libavutil/avstring.h>
 }
 
 class videoDecoder : public QObject
@@ -45,6 +49,9 @@ public:
     void decodeAndPlayAudioSample();
     void setAudioFormat();
     void checkDelays();
+
+    void getAndSaveInfoInFile(QFile *file);
+
 
 
 private:

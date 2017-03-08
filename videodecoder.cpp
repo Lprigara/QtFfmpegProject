@@ -1,4 +1,5 @@
 #include "videodecoder.h"
+#include "utilities.h"
 #include <QThread>
 
 videoDecoder::videoDecoder(QObject *parent) : QObject(parent)
@@ -330,9 +331,15 @@ void videoDecoder::closeVideoAndClean()
    ao_shutdown();
 
    initVariables();
+
 }
 
-/**********GETTERS Y SETTERS************/
+void videoDecoder::getAndSaveInfoInFile(QFile* file){
+    utilities::dumpFormat(file, formatCtx, 0, 0);
+}
+
+
+/***********GETTERS Y SETTERS************/
 
 QImage videoDecoder::getImage(){
     return lastFrame;

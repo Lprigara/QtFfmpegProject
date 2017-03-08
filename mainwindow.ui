@@ -211,6 +211,19 @@
      <string/>
     </property>
    </widget>
+   <widget class="QPushButton" name="getInfoButton">
+    <property name="geometry">
+     <rect>
+      <x>559</x>
+      <y>370</y>
+      <width>111</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Extraer información</string>
+    </property>
+   </widget>
    <zorder>labelVideoFrame</zorder>
    <zorder>getImageButton</zorder>
    <zorder>horizontalLayoutWidget</zorder>
@@ -225,6 +238,7 @@
    <zorder>playVideoChannelButton</zorder>
    <zorder>audioChannelLabel</zorder>
    <zorder>videoChannelLabel</zorder>
+   <zorder>getInfoButton</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include "videodecoder.h"
-#include "videodetails.h"
+#include "videoinfo.h"
 
 #include <QtSql>
 
@@ -19,9 +19,9 @@
 #include <QFileInfo>
 
 extern "C" {
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
+    #include <libavcodec/avcodec.h>
+    #include <libavformat/avformat.h>
+    #include <libswscale/swscale.h>
 }
 
 namespace Ui {
@@ -54,10 +54,9 @@ private slots:
     void on_playPauseButton_clicked();
     void on_getImageButton_clicked();
     void on_listWidget_itemPressed(QListWidgetItem *item);
-
     void on_playAudioChannelButton_clicked();
-
     void on_playVideoChannelButton_clicked();
+    void on_getInfoButton_clicked();
 
 private:
     Ui::MainWindow *ui;

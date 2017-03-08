@@ -2,7 +2,6 @@
 #include "ui_mainwindow.h"
 #define __STDC_CONSTANT_MACROS
 #include <QDebug>
-#include <QTime>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -19,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->playAudioChannelButton->setIcon(QIcon(":playIcon.png"));
     ui->playAudioChannelButton->setVisible(false);
     ui->playVideoChannelButton->setVisible(false);
+    ui->getInfoButton->setVisible(false);
+    ui->getImageButton->setVisible(false);
     videoStopped = false;
 //    QSqlDatabase *db = new QSqlDatabase("QSQLITE");
 //    db->setDatabaseName("data.sqlite");
@@ -47,6 +48,8 @@ void MainWindow::configureGraphicElements(){
     ui->previousFrameButton->adjustSize();
     ui->displayBar->setMinimum(0);
     ui->displayBar->setMaximum(videoDuration);
+    ui->getInfoButton->setVisible(true);
+    ui->getImageButton->setVisible(true);
 }
 
 void MainWindow::initVariables(){
@@ -172,6 +175,32 @@ void MainWindow::finishVideo() {
     videoStopped = true;
 }
 
+QString MainWindow::printFormatedTime(int64_t time){
+    int hours, mins, secs;
+    secs = time / 1000;
+    mins = secs / 60;
+    secs %= 60;
+    hours = mins / 60;
+    mins %= 60;
+
+    QString timeTextFormat = "";
+    if(hours/10 < 1 && hours !=10)
+        timeTextFormat = "0%2:";
+    else
+        timeTextFormat = "%2:";
+    if(mins/10 <1 && mins != 10)
+        timeTextFormat += "0%3:";
+    else
+        timeTextFormat += "%3:";
+    if(secs/10 <1 && secs != 10)
+        timeTextFormat += "0%4";
+    else
+        timeTextFormat += "%4";
+
+    return timeTextFormat.arg(hours).arg(mins).arg(secs);
+}
+
+
 /************************** SLOTS ********************************/
 void MainWindow::on_stopButton_clicked()
 {
@@ -231,31 +260,6 @@ void MainWindow::on_getImageButton_clicked()
     image.save(filename);
 }
 
-QString MainWindow::printFormatedTime(int64_t time){
-    int hours, mins, secs;
-    secs = time / 1000;
-    mins = secs / 60;
-    secs %= 60;
-    hours = mins / 60;
-    mins %= 60;
-
-    QString timeTextFormat = "";
-    if(hours/10 < 1 && hours !=10)
-        timeTextFormat = "0%2:";
-    else
-        timeTextFormat = "%2:";
-    if(mins/10 <1 && mins != 10)
-        timeTextFormat += "0%3:";
-    else
-        timeTextFormat += "%3:";
-    if(secs/10 <1 && secs != 10)
-        timeTextFormat += "0%4";
-    else
-        timeTextFormat += "%4";
-
-    return timeTextFormat.arg(hours).arg(mins).arg(secs);
-}
-
 void MainWindow::on_listWidget_itemPressed(QListWidgetItem *item)
 {
     this->fileName = item->text();
@@ -280,4 +284,17 @@ void MainWindow::on_playVideoChannelButton_clicked()
     prepareVideoConfig();
     processMultimediaContent();
 
+}
+
+void MainWindow::on_getInfoButton_clicked()
+{
+    QString filename = QFileDialog::getSaveFileName(this, "Guardar Información en fichero", QString(), "Archivo de texto (*.txt)");
+
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        qWarning()<< "Couldn't create file";
+        return;
+    }
+
+    videoDecoder_.getAndSaveInfoInFile(&file);
 }
