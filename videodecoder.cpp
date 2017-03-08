@@ -71,11 +71,9 @@ bool videoDecoder::loadVideo(QString fileName){
     }
     if(videoStream==-1){
         qWarning() << "Didn't find a video stream";
-        return false;
     }
     if(audioStream==-1){
         qWarning() << "Didn't find a audio stream";
-        return false;
     }
 
     ok=true;
@@ -169,7 +167,6 @@ void videoDecoder::setAudioFormat(){
     frameFinished=0;
 }
 
-
 void videoDecoder::decodeAndPlayAudioSample(){
 
     avcodec_decode_audio4(audioCodecCtx,audioFrame,&frameFinished,&packet);
@@ -258,8 +255,6 @@ bool videoDecoder::getFramesBufferVideo(){
     return true;
 }
 
-
-
 void videoDecoder::decodeFrame(int frameNumber){
     int frameFinished1;
 
@@ -280,35 +275,30 @@ void videoDecoder::decodeFrame(int frameNumber){
 //        lastFrameDelay = delay;
 //        lastFramePts = pts;
 
-       lastFrameNumber=packet.dts;
+      // It's the desired frame
+      // Convert the image format (init the context the first time)
+      int width = videoCodecCtx->width;
+      int height = videoCodecCtx->height;
+      imgConvertCtx = sws_getCachedContext(imgConvertCtx,width, height, videoCodecCtx->pix_fmt, width, height, AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
 
-       // Is this frame the desired frame?
-       if(frameNumber==-1 || lastFrameNumber>=frameNumber){
-          // It's the desired frame
-          // Convert the image format (init the context the first time)
-          int width = videoCodecCtx->width;
-          int height = videoCodecCtx->height;
-          imgConvertCtx = sws_getCachedContext(imgConvertCtx,width, height, videoCodecCtx->pix_fmt, width, height, AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
+      if(imgConvertCtx == NULL)
+      {
+         qWarning() <<"Cannot initialize the conversion context!\n";
+         return;
+      }
 
-          if(imgConvertCtx == NULL)
-          {
-             qWarning() <<"Cannot initialize the conversion context!\n";
-             return;
-          }
+      sws_scale(imgConvertCtx, frame->data, frame->linesize, 0, height, frameRGB->data, frameRGB->linesize);
 
-          sws_scale(imgConvertCtx, frame->data, frame->linesize, 0, height, frameRGB->data, frameRGB->linesize);
+      // Convert the frame to QImage
+      lastFrame=QImage(width,height,QImage::Format_RGB888);
 
-          // Convert the frame to QImage
-          lastFrame=QImage(width,height,QImage::Format_RGB888);
+      for(int y=0;y<height;y++)
+         memcpy(lastFrame.scanLine(y),frameRGB->data[0]+y*frameRGB->linesize[0],width*3);
 
-          for(int y=0;y<height;y++)
-             memcpy(lastFrame.scanLine(y),frameRGB->data[0]+y*frameRGB->linesize[0],width*3);
-
-          // Set the time
-         // desiredFrameTime =av_rescale_q(frameNumber,formatCtx->streams[videoStream]->time_base,millisecondbase);
-          lastFrameOk=true;
-       }
-    }  // frameFinished
+      // Set the time
+     // desiredFrameTime =av_rescale_q(frameNumber,formatCtx->streams[videoStream]->time_base,millisecondbase);
+      lastFrameOk=true;
+   }
 }
 
 /**********CLEAN AND CLOSE**************/
@@ -380,4 +370,12 @@ bool videoDecoder::isVideoStream(){
 
 bool videoDecoder::isAudioStream(){
     return packet.stream_index==audioStream;
+}
+
+int videoDecoder::getAudioStream(){
+    return audioStream;
+}
+
+int videoDecoder::getVideoStream(){
+    return videoStream;
 }

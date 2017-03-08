@@ -39,6 +39,8 @@ public:
     bool isAudioStream();
     bool isOk();
     bool isVideoFinished();
+    int getAudioStream();
+    int getVideoStream();
 
     void decodeAndPlayAudioSample();
     void setAudioFormat();
@@ -74,9 +76,6 @@ private:
     ao_device *adevice;
     AVStream *video_st;
     double lastFrameDelay, lastFramePts;
-
-signals:
-    void sleepe(double);
 };
 
 #endif // VIDEODECODE_H

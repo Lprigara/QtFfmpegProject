@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include "videodecoder.h"
+#include "videodetails.h"
+
+#include <QtSql>
 
 #include <QMainWindow>
 
@@ -10,8 +13,10 @@
 #include <QAudioOutput>
 #include <QImage>
 #include <QPainter>
+#include <QListWidgetItem>
 
 #include <QMessageBox>
+#include <QFileInfo>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -30,20 +35,29 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void loadMultimediaContent();
-    void convertImageToPixmap(QImage &img,QPixmap &pixmap);
-    void processVideo();
+    void processMultimediaContent();
     void displayFrame(QImage image);
     void finishVideo();
     void initVariables();
     void play();
     void pause();
+    void configureGraphicElements();
     QString printFormatedTime(int64_t time);
+    void processVideo();
+    void processAudio();
+    void prepareVideoConfig();
+    void prepareAudioConfig();
 
 private slots:
     void on_actionAbrir_triggered();
     void on_stopButton_clicked();
     void on_playPauseButton_clicked();
     void on_getImageButton_clicked();
+    void on_listWidget_itemPressed(QListWidgetItem *item);
+
+    void on_playAudioChannelButton_clicked();
+
+    void on_playVideoChannelButton_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -53,6 +67,8 @@ private:
     bool videoStopped;
     QString fileName;
     uint64_t videoDuration;
+    bool playAudio;
+    bool playVideo;
 
 signals:
 };

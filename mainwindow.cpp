@@ -13,14 +13,40 @@ MainWindow::MainWindow(QWidget *parent) :
     initVariables();
     ui->playPauseButton->setVisible(false);
     ui->stopButton->setVisible(false);
+    ui->nextFrameButton->setVisible(false);
+    ui->previousFrameButton->setVisible(false);
+    ui->playVideoChannelButton->setIcon(QIcon(":playIcon.png"));
+    ui->playAudioChannelButton->setIcon(QIcon(":playIcon.png"));
+    ui->playAudioChannelButton->setVisible(false);
+    ui->playVideoChannelButton->setVisible(false);
     videoStopped = false;
-
-    connect(&videoDecoder_, SIGNAL(sleepe(double)), this, SLOT(sleep(double)));
+//    QSqlDatabase *db = new QSqlDatabase("QSQLITE");
+//    db->setDatabaseName("data.sqlite");
+//    if (!db->open()) {
+//        QMessageBox::critical(NULL, tr("Error"), tr("No se pudo acceder a los datos."));
+//    }
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::configureGraphicElements(){
+    ui->playPauseButton->setVisible(true);
+    ui->playPauseButton->setIcon(QIcon(":pauseIcon.png"));
+    ui->playPauseButton->adjustSize();
+    ui->stopButton->setVisible(true);
+    ui->stopButton->setIcon(QIcon(":stopIcon.png"));
+    ui->stopButton->adjustSize();
+    ui->nextFrameButton->setVisible(true);
+    ui->nextFrameButton->setIcon(QIcon(":nextIcon.png"));
+    ui->nextFrameButton->adjustSize();
+    ui->previousFrameButton->setVisible(true);
+    ui->previousFrameButton->setIcon(QIcon(":previousIcon.png"));
+    ui->previousFrameButton->adjustSize();
+    ui->displayBar->setMinimum(0);
+    ui->displayBar->setMaximum(videoDuration);
 }
 
 void MainWindow::initVariables(){
@@ -34,27 +60,43 @@ void MainWindow::loadMultimediaContent() {
     videoDecoder_.loadVideo(fileName);
     videoDuration = videoDecoder_.getVideoDuration()/1000;
 
-    if(videoDecoder_.isOk()==false)
-    {
+    if(videoDecoder_.isOk()==false){
        QMessageBox::critical(this,"Error","Error loading the video");
        return;
     }
 
-    ui->playPauseButton->setVisible(true);
-    ui->playPauseButton->setIcon(QIcon(":pauseIcon.png"));
-    ui->playPauseButton->adjustSize();
-    ui->stopButton->setVisible(true);
-    ui->stopButton->setIcon(QIcon(":stopIcon.png"));
-    ui->stopButton->adjustSize();
-    ui->displayBar->setMinimum(0);
-    ui->displayBar->setMaximum(videoDuration);
+    configureGraphicElements();
+
+
+    if(videoDecoder_.getAudioStream() != -1){
+        prepareAudioConfig();
+    }
+
+    if(videoDecoder_.getVideoStream() != -1){
+        prepareVideoConfig();
+    }
+
+    processMultimediaContent();
+}
+
+void MainWindow::prepareAudioConfig(){
+    playAudio = true;
+    ui->audioChannelLabel->setText(" Canal de Audio: " + videoDecoder_.getAudioStream());
+    ui->playAudioChannelButton->setVisible(true);
+    ui->playAudioChannelButton->adjustSize();
 
     videoDecoder_.findAudioCodec();
     videoDecoder_.setAudioFormat();
+}
+
+void MainWindow::prepareVideoConfig(){
+    playVideo = true;
+    ui->videoChannelLabel->setText("Canal de Vídeo: " + videoDecoder_.getVideoStream());
+    ui->playVideoChannelButton->setVisible(true);
+    ui->playVideoChannelButton->adjustSize();
+
     videoDecoder_.findVideoCodec();
     videoDecoder_.getFramesBufferVideo();
-
-    processVideo();
 }
 
 void MainWindow::displayFrame(QImage image)
@@ -66,9 +108,11 @@ void MainWindow::displayFrame(QImage image)
 
    // Convert the QImage to a QPixmap for display
    QPixmap pixmap;
-   convertImageToPixmap(image,pixmap);
+   pixmap.convertFromImage(image);
+   pixmap = pixmap.scaledToHeight(ui->labelVideoFrame->height());
 
    // Display the QPixmap
+   ui->labelVideoFrame->setAlignment(Qt::AlignCenter);
    ui->labelVideoFrame->setPixmap(pixmap);
 
    QString timeText = printFormatedTime(videoDecoder_.getLastFrameTime()) + " ----- " + printFormatedTime(videoDuration);
@@ -83,31 +127,21 @@ void MainWindow::displayFrame(QImage image)
 
 }
 
-void MainWindow::convertImageToPixmap(QImage &image,QPixmap &pixmap)
-{
-   // Convert the QImage to a QPixmap for display
-   pixmap = QPixmap(image.size());
-   QPainter painter;
-   painter.begin(&pixmap);
-   painter.drawImage(0,0,image);
-   painter.end();
-}
-
-void MainWindow::processVideo(){
+void MainWindow::processMultimediaContent(){
 
     while(videoPaused == false && videoDecoder_.readNextFrame()){
         QApplication::processEvents();
         if(videoStopped == true){ return; }
 
-        if(videoDecoder_.isVideoStream()){
-            videoDecoder_.decodeFrame(lastFrameProcessed);
-            QImage image = videoDecoder_.getImage();
-            displayFrame(image);
-        }
+        if(playVideo)
+            if(videoDecoder_.isVideoStream()){
+                processVideo();
+            }
 
-        if(videoDecoder_.isAudioStream()){
-            videoDecoder_.decodeAndPlayAudioSample();
-        }
+        if(playAudio)
+            if(videoDecoder_.isAudioStream()){
+                processAudio();
+            }
 
         lastFrameProcessed ++;
     }
@@ -116,6 +150,16 @@ void MainWindow::processVideo(){
 
     if(videoDecoder_.isVideoFinished())
        finishVideo();
+}
+
+void MainWindow::processVideo(){
+    videoDecoder_.decodeFrame(lastFrameProcessed);
+    QImage image = videoDecoder_.getImage();
+    displayFrame(image);
+}
+
+void MainWindow::processAudio(){
+    videoDecoder_.decodeAndPlayAudioSample();
 }
 
 void MainWindow::finishVideo() {
@@ -131,7 +175,7 @@ void MainWindow::finishVideo() {
 /************************** SLOTS ********************************/
 void MainWindow::on_stopButton_clicked()
 {
-    videoStopped = true;
+    videoStopped = true;videoStopped = true;
     finishVideo();
 }
 
@@ -154,10 +198,15 @@ void MainWindow::on_playPauseButton_clicked()
 
 void MainWindow::on_actionAbrir_triggered()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Abrir archivo", QString() ,"Video (*.mjpeg *.mp4 *avi)"); //te devuelve el nombre del archivo
-    if (!fileName.isEmpty()){
-        this->fileName = fileName;
-        loadMultimediaContent();
+    QStringList routeFiles = QFileDialog::getOpenFileNames(this, "Abrir archivos", QDir::currentPath(), "Video (*.mjpeg *.mp4 *avi)");
+    if( !routeFiles.isEmpty() )
+    {
+        for (int i =0;i<routeFiles.count();i++){
+            //QFileInfo route(routeFiles.at(i));
+            //QString fileName = route.fileName();
+            //videoDetails* videoDetails_ = new videoDetails(route.absoluteFilePath().toLocal8Bit().constData(), fileName.toLocal8Bit().constData());
+            ui->listWidget->addItem(routeFiles.at(i));
+        }
     }
 }
 
@@ -171,7 +220,7 @@ void MainWindow::play(){
     videoPaused = false;
     ui->playPauseButton->setIcon(QIcon(":pauseIcon.png"));
     ui->playPauseButton->adjustSize();
-    processVideo();
+    processMultimediaContent();
 }
 
 void MainWindow::on_getImageButton_clicked()
@@ -205,4 +254,30 @@ QString MainWindow::printFormatedTime(int64_t time){
         timeTextFormat += "%4";
 
     return timeTextFormat.arg(hours).arg(mins).arg(secs);
+}
+
+void MainWindow::on_listWidget_itemPressed(QListWidgetItem *item)
+{
+    this->fileName = item->text();
+    loadMultimediaContent();
+}
+
+void MainWindow::on_playAudioChannelButton_clicked()
+{
+    finishVideo();
+    playVideo = false;
+    videoStopped = false;
+    prepareAudioConfig();
+    processMultimediaContent();
+
+}
+
+void MainWindow::on_playVideoChannelButton_clicked()
+{
+    finishVideo();
+    playAudio = false;
+    videoStopped = false;
+    prepareVideoConfig();
+    processMultimediaContent();
+
 }

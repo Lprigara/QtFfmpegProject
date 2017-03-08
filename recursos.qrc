@@ -3,5 +3,7 @@
         <file>pauseIcon.png</file>
         <file>playIcon.png</file>
         <file>stopIcon.png</file>
+        <file>nextIcon.png</file>
+        <file>previousIcon.png</file>
     </qresource>
 </RCC>
