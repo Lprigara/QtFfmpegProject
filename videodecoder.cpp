@@ -2,8 +2,7 @@
 #include "utilities.h"
 #include <QThread>
 
-videoDecoder::videoDecoder(QObject *parent) : QObject(parent)
-{
+videoDecoder::videoDecoder(QObject *parent) : QObject(parent){
     initCodec();
     initVariables();
 }
@@ -25,14 +24,12 @@ void videoDecoder::initVariables(){
     lastFramePts =0;
 }
 
-bool videoDecoder::initCodec()
-{
+bool videoDecoder::initCodec(){
    avcodec_register_all();
    av_register_all();
 
    printf("License: %s\n",avformat_license());
    printf("AVCodec version %d\n", avformat_version());
-   printf("AVFormat configuration: %s\n",avformat_configuration());
 
    return true;
 }
@@ -134,7 +131,7 @@ void videoDecoder::setAudioFormat(){
     if (!(resampleCtx = avresample_alloc_context())) {
        fprintf(stderr, "Could not allocate resample context\n");
        return;
-   }
+    }
 
     // The file channels.
     av_opt_set_int(resampleCtx, "in_channel_layout", av_get_default_channel_layout(audioCodecCtx->channels), 0);
@@ -303,8 +300,7 @@ void videoDecoder::decodeFrame(int frameNumber){
 }
 
 /**********CLEAN AND CLOSE**************/
-void videoDecoder::closeVideoAndClean()
-{
+void videoDecoder::closeVideoAndClean(){
    // Free the RGB image
    if(buffer)
       delete [] buffer;

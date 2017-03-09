@@ -31,45 +31,45 @@ class MainWindow;
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-public:
-    explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
-    void loadMultimediaContent();
-    void processMultimediaContent();
-    void displayFrame(QImage image);
-    void finishVideo();
-    void initVariables();
-    void play();
-    void pause();
-    void configureGraphicElements();
-    QString printFormatedTime(int64_t time);
-    void processVideo();
-    void processAudio();
-    void prepareVideoConfig();
-    void prepareAudioConfig();
+    public:
+        explicit MainWindow(QWidget *parent = 0);
+        ~MainWindow();
+        void loadMultimediaContent();
+        void processMultimediaContent();
+        void displayFrame(QImage image);
+        void finishVideo();
+        void initVariables();
+        void play();
+        void pause();
+        void configureGraphicElements();
+        QString printFormatedTime(int64_t time);
+        void processVideo();
+        void processAudio();
+        void prepareVideoConfig();
+        void prepareAudioConfig();
 
-private slots:
-    void on_actionAbrir_triggered();
-    void on_stopButton_clicked();
-    void on_playPauseButton_clicked();
-    void on_getImageButton_clicked();
-    void on_listWidget_itemPressed(QListWidgetItem *item);
-    void on_playAudioChannelButton_clicked();
-    void on_playVideoChannelButton_clicked();
-    void on_getInfoButton_clicked();
+    private slots:
+        void on_stopButton_clicked();
+        void on_playPauseButton_clicked();
+        void on_getImageButton_clicked();
+        void on_listWidget_itemPressed(QListWidgetItem *item);
+        void on_playAudioChannelButton_clicked();
+        void on_playVideoChannelButton_clicked();
+        void on_getInfoButton_clicked();
+        void on_pushButton_clicked();
+        void on_openFileButton_clicked();
 
-private:
-    Ui::MainWindow *ui;
-    videoDecoder videoDecoder_;
-    bool videoPaused;
-    int lastFrameProcessed;
-    bool videoStopped;
-    QString fileName;
-    uint64_t videoDuration;
-    bool playAudio;
-    bool playVideo;
+    private:
+        Ui::MainWindow *ui;
+        videoDecoder videoDecoder_;
+        bool videoPaused;
+        int lastFrameProcessed;
+        bool videoStopped;
+        QString fileName;
+        uint64_t videoDuration;
+        bool playAudio;
+        bool playVideo;
 
-signals:
 };
 
 #endif // MAINWINDOW_H

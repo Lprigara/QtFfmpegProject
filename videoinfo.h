@@ -14,18 +14,17 @@ extern "C" {
     #include <libavutil/avstring.h>
 }
 
-class videoInfo
-{
-public:
-    videoInfo(const char* ruta, const char* nombre);
-    void setRuta(const char* ruta);
-    void setNombre(const char* nombre);
-    const char* getRuta();
-    const char* getNombre();
+class videoInfo{
+    public:
+        videoInfo(const char* ruta, const char* nombre);
+        void setRuta(const char* ruta);
+        void setNombre(const char* nombre);
+        const char* getRuta();
+        const char* getNombre();
 
-private:
-    const char* ruta;
-    const char* nombre;
+    private:
+        const char* ruta;
+        const char* nombre;
 };
 
 #endif // VIDEODETAILS_H

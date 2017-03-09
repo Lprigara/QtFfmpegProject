@@ -1,9 +1,6 @@
 #include "utilities.h"
 
-utilities::utilities()
-{
-
-}
+utilities::utilities(){}
 
 void utilities::dumpFormat(QFile* file, AVFormatContext *formatCtx, int index, int is_output){
 

@@ -18,71 +18,69 @@ extern "C" {
     #include <libavutil/avstring.h>
 }
 
-class videoDecoder : public QObject
-{
+class videoDecoder : public QObject{
     Q_OBJECT
-public:
-    explicit videoDecoder(QObject *parent = 0);
-    void initVariables();
-    bool initCodec();
+    public:
+        explicit videoDecoder(QObject *parent = 0);
+        void initVariables();
+        bool initCodec();
 
-    bool loadVideo(QString fileName);
-    void decodeFrame(int frameNumber);
-    bool readNextFrame();
-    void closeVideoAndClean();
-    bool getFramesBufferVideo();
-    bool findAudioCodec();
-    bool findVideoCodec();
+        bool loadVideo(QString fileName);
+        void decodeFrame(int frameNumber);
+        bool readNextFrame();
+        void closeVideoAndClean();
+        bool getFramesBufferVideo();
+        bool findAudioCodec();
+        bool findVideoCodec();
 
-    QImage getImage();
-    bool isLastFrameOk();
-    int64_t getLastFrameTime();
-    int64_t getVideoDuration();
-    int getLastFrameNumber();
-    bool isVideoStream();
-    bool isAudioStream();
-    bool isOk();
-    bool isVideoFinished();
-    int getAudioStream();
-    int getVideoStream();
+        QImage getImage();
+        bool isLastFrameOk();
+        int64_t getLastFrameTime();
+        int64_t getVideoDuration();
+        int getLastFrameNumber();
+        bool isVideoStream();
+        bool isAudioStream();
+        bool isOk();
+        bool isVideoFinished();
+        int getAudioStream();
+        int getVideoStream();
 
-    void decodeAndPlayAudioSample();
-    void setAudioFormat();
-    void checkDelays();
+        void decodeAndPlayAudioSample();
+        void setAudioFormat();
+        void checkDelays();
 
-    void getAndSaveInfoInFile(QFile *file);
+        void getAndSaveInfoInFile(QFile *file);
 
 
-
-private:
-    AVFormatContext *formatCtx;
-    int videoStream, audioStream, numBytes;
-    AVCodecContext *audioCodecCtx, *videoCodecCtx;
-    AVCodec *audioCodec, *videoCodec;
-    AVFrame *frame, *frameRGB;
-    AVFrame *audioFrame;
-    uint8_t *buffer;
-    struct SwsContext *imgConvertCtx;
-    bool ok;
-    int desiredFrameTime;
-    bool lastFrameOk;
-    int64_t lastFrameTime;
-    int lastFrameNumber;
-    QImage lastFrame;
-    AVPacket packet;
-    bool videoFinished;
-    AVAudioResampleContext* resampleCtx;
-    int frameFinished;
-    uint8_t *output;
-    int out_linesize;
-    int out_samples;
-    int64_t out_sample_fmt;
-    ao_sample_format sformat;
-    ao_info* info;
-    int driver;
-    ao_device *adevice;
-    AVStream *video_st;
-    double lastFrameDelay, lastFramePts;
+    private:
+        AVFormatContext *formatCtx;
+        int videoStream, audioStream, numBytes;
+        AVCodecContext *audioCodecCtx, *videoCodecCtx;
+        AVCodec *audioCodec, *videoCodec;
+        AVFrame *frame, *frameRGB;
+        AVFrame *audioFrame;
+        uint8_t *buffer;
+        struct SwsContext *imgConvertCtx;
+        bool ok;
+        int desiredFrameTime;
+        bool lastFrameOk;
+        int64_t lastFrameTime;
+        int lastFrameNumber;
+        QImage lastFrame;
+        AVPacket packet;
+        bool videoFinished;
+        AVAudioResampleContext* resampleCtx;
+        int frameFinished;
+        uint8_t *output;
+        int out_linesize;
+        int out_samples;
+        int64_t out_sample_fmt;
+        ao_sample_format sformat;
+        ao_info* info;
+        int driver;
+        ao_device *adevice;
+        AVStream *video_st;
+        double lastFrameDelay, lastFramePts;
 };
 
 #endif // VIDEODECODE_H

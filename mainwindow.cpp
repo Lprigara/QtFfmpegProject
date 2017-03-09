@@ -2,11 +2,10 @@
 #include "ui_mainwindow.h"
 #define __STDC_CONSTANT_MACROS
 #include <QDebug>
+#include <QtSql/QtSql>
+#include <QVariant>
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
-{
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow){
     ui->setupUi(this);
 
     initVariables();
@@ -20,16 +19,27 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->playVideoChannelButton->setVisible(false);
     ui->getInfoButton->setVisible(false);
     ui->getImageButton->setVisible(false);
+
     videoStopped = false;
-//    QSqlDatabase *db = new QSqlDatabase("QSQLITE");
-//    db->setDatabaseName("data.sqlite");
-//    if (!db->open()) {
-//        QMessageBox::critical(NULL, tr("Error"), tr("No se pudo acceder a los datos."));
-//    }
+
+    QSqlDatabase db = QSqlDatabase::addDatabase( "QSQLITE");
+    db.setDatabaseName("FfmpegMediaTool.sqlite");
+    if (!db.open()) {
+        QMessageBox::critical(NULL, "Error", "No se pudo acceder a los datos.");
+    }
+
+    QSqlQuery query;
+    query.exec("SELECT * FROM ContenidoMultimedia");
+    while(query.next()){
+        QListWidgetItem *item = new QListWidgetItem();
+        item->setData(Qt::DisplayRole, query.value(1).toString());
+        item->setData(Qt::UserRole, query.value(2).toString());
+        ui->listWidget->addItem(item);
+    }
+
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow(){
     delete ui;
 }
 
@@ -102,8 +112,7 @@ void MainWindow::prepareVideoConfig(){
     videoDecoder_.getFramesBufferVideo();
 }
 
-void MainWindow::displayFrame(QImage image)
-{
+void MainWindow::displayFrame(QImage image){
     if(videoDecoder_.isOk()==false){
        QMessageBox::critical(this,"Error","Load a video first");
        return;
@@ -225,16 +234,32 @@ void MainWindow::on_playPauseButton_clicked()
     }
 }
 
-void MainWindow::on_actionAbrir_triggered()
+void MainWindow::on_openFileButton_clicked()
 {
     QStringList routeFiles = QFileDialog::getOpenFileNames(this, "Abrir archivos", QDir::currentPath(), "Video (*.mjpeg *.mp4 *avi)");
-    if( !routeFiles.isEmpty() )
-    {
+    if( !routeFiles.isEmpty() ){
         for (int i =0;i<routeFiles.count();i++){
-            //QFileInfo route(routeFiles.at(i));
-            //QString fileName = route.fileName();
-            //videoDetails* videoDetails_ = new videoDetails(route.absoluteFilePath().toLocal8Bit().constData(), fileName.toLocal8Bit().constData());
-            ui->listWidget->addItem(routeFiles.at(i));
+            QFileInfo route(routeFiles.at(i));
+            QString fileName = route.fileName();
+            QString ruta = route.absoluteFilePath();
+
+            QSqlQuery query;
+            query.prepare("SELECT * FROM ContenidoMultimedia Where Ruta = :ruta");
+            query.bindValue(":ruta", ruta);
+            query.exec();
+
+            if(!query.next()){
+                QSqlQuery query1;
+                query1.prepare("INSERT INTO ContenidoMultimedia(Nombre,Ruta) VALUES(:nombre,:ruta)");
+                query1.bindValue(":nombre", fileName);
+                query1.bindValue(":ruta", ruta);
+                query1.exec();
+
+                QListWidgetItem *item = new QListWidgetItem();
+                item->setData(Qt::DisplayRole, fileName);
+                item->setData(Qt::UserRole, ruta);
+                ui->listWidget->addItem(item);
+            }
         }
     }
 }
@@ -252,22 +277,20 @@ void MainWindow::play(){
     processMultimediaContent();
 }
 
-void MainWindow::on_getImageButton_clicked()
-{
+void MainWindow::on_getImageButton_clicked(){
     pause();
     QString filename = QFileDialog::getSaveFileName(this, "Guardar Imagen", QString(), "Imagen (*.jpg *.png)");
     QImage image = videoDecoder_.getImage();
     image.save(filename);
 }
 
-void MainWindow::on_listWidget_itemPressed(QListWidgetItem *item)
-{
-    this->fileName = item->text();
+void MainWindow::on_listWidget_itemPressed(QListWidgetItem *item){
+    QVariant data = item->data(Qt::UserRole);
+    this->fileName = data.toString();
     loadMultimediaContent();
 }
 
-void MainWindow::on_playAudioChannelButton_clicked()
-{
+void MainWindow::on_playAudioChannelButton_clicked(){
     finishVideo();
     playVideo = false;
     videoStopped = false;
@@ -276,8 +299,7 @@ void MainWindow::on_playAudioChannelButton_clicked()
 
 }
 
-void MainWindow::on_playVideoChannelButton_clicked()
-{
+void MainWindow::on_playVideoChannelButton_clicked(){
     finishVideo();
     playAudio = false;
     videoStopped = false;
@@ -286,8 +308,7 @@ void MainWindow::on_playVideoChannelButton_clicked()
 
 }
 
-void MainWindow::on_getInfoButton_clicked()
-{
+void MainWindow::on_getInfoButton_clicked(){
     QString filename = QFileDialog::getSaveFileName(this, "Guardar Información en fichero", QString(), "Archivo de texto (*.txt)");
 
     QFile file(filename);
@@ -298,3 +319,9 @@ void MainWindow::on_getInfoButton_clicked()
 
     videoDecoder_.getAndSaveInfoInFile(&file);
 }
+
+void MainWindow::on_pushButton_clicked(){
+    qApp->exit();
+}
+
+
