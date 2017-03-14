@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "videodecoder.h"
+#include "videoencoder.h"
 #include "videoinfo.h"
 
 #include <QtSql>
@@ -47,6 +48,7 @@ class MainWindow : public QMainWindow {
         void processAudio();
         void prepareVideoConfig();
         void prepareAudioConfig();
+        void exportVideo(QString filename, bool vfr);
 
     private slots:
         void on_stopButton_clicked();
@@ -56,12 +58,14 @@ class MainWindow : public QMainWindow {
         void on_playAudioChannelButton_clicked();
         void on_playVideoChannelButton_clicked();
         void on_getInfoButton_clicked();
-        void on_pushButton_clicked();
         void on_openFileButton_clicked();
+        void on_exitButton_clicked();
+        void on_exportButton_clicked();
 
-    private:
+private:
         Ui::MainWindow *ui;
         videoDecoder videoDecoder_;
+        videoEncoder videoEncoder_;
         bool videoPaused;
         int lastFrameProcessed;
         bool videoStopped;

@@ -230,7 +230,7 @@
      <string>Abrir archivo</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="exitButton">
     <property name="geometry">
      <rect>
       <x>759</x>
@@ -244,6 +244,19 @@
     </property>
     <property name="text">
      <string>X</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="exportButton">
+    <property name="geometry">
+     <rect>
+      <x>700</x>
+      <y>640</y>
+      <width>80</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Exportar</string>
     </property>
    </widget>
    <zorder>labelVideoFrame</zorder>
@@ -262,7 +275,8 @@
    <zorder>videoChannelLabel</zorder>
    <zorder>getInfoButton</zorder>
    <zorder>openFileButton</zorder>
-   <zorder>pushButton</zorder>
+   <zorder>exitButton</zorder>
+   <zorder>exportButton</zorder>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">

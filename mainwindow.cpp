@@ -236,7 +236,7 @@ void MainWindow::on_playPauseButton_clicked()
 
 void MainWindow::on_openFileButton_clicked()
 {
-    QStringList routeFiles = QFileDialog::getOpenFileNames(this, "Abrir archivos", QDir::currentPath(), "Video (*.mjpeg *.mp4 *avi)");
+    QStringList routeFiles = QFileDialog::getOpenFileNames(this, "Abrir archivos", QDir::currentPath(), "Video (*.mjpeg *.mp4 *avi *mkv)");
     if( !routeFiles.isEmpty() ){
         for (int i =0;i<routeFiles.count();i++){
             QFileInfo route(routeFiles.at(i));
@@ -320,8 +320,15 @@ void MainWindow::on_getInfoButton_clicked(){
     videoDecoder_.getAndSaveInfoInFile(&file);
 }
 
-void MainWindow::on_pushButton_clicked(){
+void MainWindow::on_exitButton_clicked(){
+    videoStopped = true;
     qApp->exit();
 }
 
-
+void MainWindow::on_exportButton_clicked(){
+    QString srcFile = QFileDialog::getOpenFileName(this, "Archivo origen", QString(), "Video (*.mjpeg *.mp4 *avi *mkv *mov)");
+    QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
+    if(!srcFile.isNull() && !dstFile.isNull()){
+        videoEncoder_.remuxing(srcFile.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
+    }
+}
