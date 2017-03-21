@@ -246,17 +246,96 @@
      <string>X</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="exportButton">
+   <widget class="QPushButton" name="formatButton">
     <property name="geometry">
      <rect>
-      <x>700</x>
-      <y>640</y>
-      <width>80</width>
+      <x>220</x>
+      <y>630</y>
+      <width>101</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>Exportar</string>
+     <string>Cambiar Formato</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="transcodeButton">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>630</y>
+      <width>101</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Transcodificar</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="audioCodecSelector">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>560</y>
+      <width>111</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>AAC</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MP3</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QComboBox" name="videoCodecSelector">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>590</y>
+      <width>111</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>MPEG1</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MPEG2</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>560</y>
+      <width>31</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Audio</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>590</y>
+      <width>31</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Vídeo</string>
     </property>
    </widget>
    <zorder>labelVideoFrame</zorder>
@@ -276,7 +355,12 @@
    <zorder>getInfoButton</zorder>
    <zorder>openFileButton</zorder>
    <zorder>exitButton</zorder>
-   <zorder>exportButton</zorder>
+   <zorder>formatButton</zorder>
+   <zorder>transcodeButton</zorder>
+   <zorder>audioCodecSelector</zorder>
+   <zorder>videoCodecSelector</zorder>
+   <zorder>label</zorder>
+   <zorder>label_2</zorder>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">

@@ -60,7 +60,8 @@ class MainWindow : public QMainWindow {
         void on_getInfoButton_clicked();
         void on_openFileButton_clicked();
         void on_exitButton_clicked();
-        void on_exportButton_clicked();
+        void on_formatButton_clicked();
+        void on_transcodeButton_clicked();
 
 private:
         Ui::MainWindow *ui;

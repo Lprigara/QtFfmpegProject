@@ -325,10 +325,30 @@ void MainWindow::on_exitButton_clicked(){
     qApp->exit();
 }
 
-void MainWindow::on_exportButton_clicked(){
+void MainWindow::on_formatButton_clicked(){
     QString srcFile = QFileDialog::getOpenFileName(this, "Archivo origen", QString(), "Video (*.mjpeg *.mp4 *avi *mkv *mov)");
     QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
     if(!srcFile.isNull() && !dstFile.isNull()){
-        videoEncoder_.remuxing(srcFile.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
+        bool remuxingOk = videoEncoder_.remuxing(srcFile.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
+        if(remuxingOk){
+            QMessageBox::information(this, "Info", "El archivo ha cambiado de formato correctamente");
+        }else{
+            QMessageBox::critical(this, "Error", "El archivo no se ha podido cambiar de formato");
+        }
+    }
+}
+
+void MainWindow::on_transcodeButton_clicked(){
+    QString srcFile = QFileDialog::getOpenFileName(this, "Archivo origen", QString(), "Video (*.mjpeg *.mp4 *avi *mkv *mov)");
+    QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
+    if(!srcFile.isNull() && !dstFile.isNull()){
+        QString audioCodec = ui->audioCodecSelector->currentText();
+        QString videoCodec = ui->videoCodecSelector->currentText();
+        bool transcodeOk = videoEncoder_.transcode(srcFile.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData(), audioCodec, videoCodec);
+        if(transcodeOk){
+            QMessageBox::information(this, "Info", "El archivo ha cambiado de códecs correctamente");
+        }else{
+            QMessageBox::critical(this, "Error", "El archivo no se ha podido cambiar de códecs");
+        }
     }
 }
