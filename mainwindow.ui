@@ -338,6 +338,78 @@
      <string>Vídeo</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="pushButton">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>500</y>
+      <width>80</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="cutVideoButton">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>590</y>
+      <width>80</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Cortar vídeo</string>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="startVideoSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>530</y>
+      <width>71</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="finishVideoSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>560</y>
+      <width>71</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>548</x>
+      <y>530</y>
+      <width>31</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Inicio:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_4">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>560</y>
+      <width>31</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Fin:</string>
+    </property>
+   </widget>
    <zorder>labelVideoFrame</zorder>
    <zorder>getImageButton</zorder>
    <zorder>horizontalLayoutWidget</zorder>
@@ -361,6 +433,12 @@
    <zorder>videoCodecSelector</zorder>
    <zorder>label</zorder>
    <zorder>label_2</zorder>
+   <zorder>pushButton</zorder>
+   <zorder>cutVideoButton</zorder>
+   <zorder>startVideoSpinBox</zorder>
+   <zorder>finishVideoSpinBox</zorder>
+   <zorder>label_3</zorder>
+   <zorder>label_4</zorder>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -371,6 +449,16 @@
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>790</width>
+     <height>19</height>
+    </rect>
+   </property>
+  </widget>
   <action name="actionAbrir">
    <property name="text">
     <string>Abrir</string>

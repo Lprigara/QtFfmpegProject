@@ -352,3 +352,19 @@ void MainWindow::on_transcodeButton_clicked(){
         }
     }
 }
+
+void MainWindow::on_cutVideoButton_clicked(){
+    QString srcFile = QFileDialog::getOpenFileName(this, "Archivo origen", QString(), "Video (*.mjpeg *.mp4 *avi *mkv *mov)");
+    QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
+    if(!srcFile.isNull() && !dstFile.isNull()){
+        double startVideo = ui->startVideoSpinBox->value();
+        double finishVideo = ui->finishVideoSpinBox->value();
+
+        bool cutOk = videoCutter_.cutVideo(startVideo, finishVideo, srcFile.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
+        if(cutOk){
+            QMessageBox::information(this, "Info", "La segmentación del vídeo ha sido satisfactoria");
+        }else{
+            QMessageBox::critical(this, "Error", "Ha ocurrido un error al segmentar el vídeo");
+        }
+    }
+}

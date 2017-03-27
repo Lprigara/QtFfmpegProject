@@ -3,7 +3,9 @@
 
 #include "videodecoder.h"
 #include "videoencoder.h"
+#include "videofilter.h"
 #include "videoinfo.h"
+#include "videocutter.h"
 
 #include <QtSql>
 
@@ -62,11 +64,14 @@ class MainWindow : public QMainWindow {
         void on_exitButton_clicked();
         void on_formatButton_clicked();
         void on_transcodeButton_clicked();
+        void on_cutVideoButton_clicked();
 
 private:
         Ui::MainWindow *ui;
         videoDecoder videoDecoder_;
         videoEncoder videoEncoder_;
+        videoFilter videoFilter_;
+        videoCutter videoCutter_;
         bool videoPaused;
         int lastFrameProcessed;
         bool videoStopped;
