@@ -368,3 +368,17 @@ void MainWindow::on_cutVideoButton_clicked(){
         }
     }
 }
+
+void MainWindow::on_extractAudioButton_clicked(){
+    QString srcFile = QFileDialog::getOpenFileName(this, "Archivo origen", QString(), "Video (*.mjpeg *.mp4 *avi *mkv *mov)");
+    QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
+    if(!srcFile.isNull() && !dstFile.isNull()){
+
+        bool extractAudioOk = audioExtractor_.convert(srcFile.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
+        if(extractAudioOk){
+            QMessageBox::information(this, "Info", "La extracción del audio ha sido satisfactoria");
+        }else{
+            QMessageBox::critical(this, "Error", "Ha ocurrido un error al extraer el audio");
+        }
+    }
+}

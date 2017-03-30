@@ -338,7 +338,7 @@
      <string>Vídeo</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="extractAudioButton">
     <property name="geometry">
      <rect>
       <x>340</x>
@@ -348,7 +348,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>PushButton</string>
+     <string>Extraer audio</string>
     </property>
    </widget>
    <widget class="QPushButton" name="cutVideoButton">
@@ -433,7 +433,7 @@
    <zorder>videoCodecSelector</zorder>
    <zorder>label</zorder>
    <zorder>label_2</zorder>
-   <zorder>pushButton</zorder>
+   <zorder>extractAudioButton</zorder>
    <zorder>cutVideoButton</zorder>
    <zorder>startVideoSpinBox</zorder>
    <zorder>finishVideoSpinBox</zorder>

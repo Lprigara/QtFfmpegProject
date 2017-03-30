@@ -6,6 +6,7 @@
 #include "videofilter.h"
 #include "videoinfo.h"
 #include "videocutter.h"
+#include "audioextractor.h"
 
 #include <QtSql>
 
@@ -65,6 +66,7 @@ class MainWindow : public QMainWindow {
         void on_formatButton_clicked();
         void on_transcodeButton_clicked();
         void on_cutVideoButton_clicked();
+        void on_extractAudioButton_clicked();
 
 private:
         Ui::MainWindow *ui;
@@ -72,6 +74,7 @@ private:
         videoEncoder videoEncoder_;
         videoFilter videoFilter_;
         videoCutter videoCutter_;
+        audioExtractor audioExtractor_;
         bool videoPaused;
         int lastFrameProcessed;
         bool videoStopped;
