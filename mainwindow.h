@@ -3,10 +3,10 @@
 
 #include "videodecoder.h"
 #include "videoencoder.h"
-#include "videofilter.h"
 #include "videoinfo.h"
 #include "videocutter.h"
 #include "audioextractor.h"
+#include "videoscaler.h"
 
 #include <QtSql>
 
@@ -67,14 +67,15 @@ class MainWindow : public QMainWindow {
         void on_transcodeButton_clicked();
         void on_cutVideoButton_clicked();
         void on_extractAudioButton_clicked();
+        void on_scaleButton_clicked();
 
 private:
         Ui::MainWindow *ui;
         videoDecoder videoDecoder_;
         videoEncoder videoEncoder_;
-        videoFilter videoFilter_;
         videoCutter videoCutter_;
         audioExtractor audioExtractor_;
+        videoScaler videoScaler_;
         bool videoPaused;
         int lastFrameProcessed;
         bool videoStopped;

@@ -382,3 +382,18 @@ void MainWindow::on_extractAudioButton_clicked(){
         }
     }
 }
+
+void MainWindow::on_scaleButton_clicked(){
+    QString srcFile = QFileDialog::getOpenFileName(this, "Archivo origen", QString(), "Video (*.mjpeg *.mp4 *avi *mkv *mov)");
+    QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
+    int height = ui->height->value();
+    int width = ui->width->value();
+    if(!srcFile.isNull() && !dstFile.isNull()){
+        bool videoScalerOk = videoScaler_.processScaled("/home/leonor/Escritorio/vv.mp4", "/home/leonor/Descargas/scale.mp4", height, width);
+        if(videoScalerOk){
+            QMessageBox::information(this, "Info", "El vídeo ha sido escalado satisfactoriamente");
+        }else{
+            QMessageBox::critical(this, "Error", "Ha ocurrido un error al escalar el vídeo");
+        }
+    }
+}
