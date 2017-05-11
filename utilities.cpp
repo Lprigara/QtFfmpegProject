@@ -425,3 +425,4 @@ void utilities::dumpCPB(QTextStream &outFile, AVPacketSideData *sideData){
     outFile << "bitrate max/min/avg: " << cpb->max_bitrate << "/" << cpb->min_bitrate << "/" << cpb->avg_bitrate;
     outFile << " buffer size: " << cpb->buffer_size << "vbv_delay: " << cpb->vbv_delay;
 }
+

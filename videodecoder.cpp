@@ -351,6 +351,12 @@ int64_t videoDecoder::getLastFrameTime(){
     return lastFrameTime;
 }
 
+int64_t videoDecoder::getLastSampleTime(){
+    AVRational millisecondbase = {1, 1000};
+    lastSampleTime= av_rescale_q(packet.dts,formatCtx->streams[audioStream]->time_base,millisecondbase);
+    return lastSampleTime;
+}
+
 int64_t videoDecoder::getVideoDuration(){
     return formatCtx->duration;
 }
@@ -375,6 +381,14 @@ bool videoDecoder::isAudioStream(){
     return packet.stream_index==audioStream;
 }
 
+bool videoDecoder::hasAudioStream(){
+    return audioStream != -1;
+}
+
+bool videoDecoder::hasVideoStream(){
+    return videoStream != -1;
+}
+
 int videoDecoder::getAudioStream(){
     return audioStream;
 }
@@ -382,3 +396,35 @@ int videoDecoder::getAudioStream(){
 int videoDecoder::getVideoStream(){
     return videoStream;
 }
+
+QString videoDecoder::getVideoCodecInfo(){
+    QString name = videoCodecCtx->codec->name;
+    return name + ",   Pixel Format: " + av_get_pix_fmt_name(videoCodecCtx->pix_fmt);
+}
+
+QString videoDecoder::getAudioCodecInfo(){
+    QString name = audioCodecCtx->codec->name;
+    return name + ",   Sample rate: " + QString::number(audioCodecCtx->sample_rate) + ",   Sample Format: " +
+            av_get_sample_fmt_name(audioCodecCtx->sample_fmt);
+}
+
+QString videoDecoder::getDimensions(){
+    return QString::number(videoCodecCtx->height) + " x " + QString::number(videoCodecCtx->width);
+}
+
+QString videoDecoder::getBitrate(){
+    return QString::number(formatCtx->bit_rate / 1000) + " kb/s\n";
+}
+
+QString videoDecoder::getChannelsNumber(){
+    return QString::number(formatCtx->nb_streams);
+}
+
+QString videoDecoder::getVideoCodecName(){
+    return videoCodecCtx->codec->name;
+}
+
+QString videoDecoder::getAudioCodecName(){
+    return audioCodecCtx->codec->name;
+}
+

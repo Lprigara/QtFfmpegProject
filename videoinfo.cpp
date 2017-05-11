@@ -20,4 +20,3 @@ void videoInfo::setNombre(const char* nombre){
 void videoInfo::setRuta(const char *ruta){
     this->ruta = ruta;
 }
-

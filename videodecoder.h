@@ -16,6 +16,9 @@ extern "C" {
     #include <ao/ao.h>
     #include <libavutil/opt.h>
     #include <libavutil/avstring.h>
+    #include <libavutil/imgutils.h>
+    #include <libavutil/parseutils.h>
+    #include <libswscale/swscale.h>
 }
 
 class videoDecoder : public QObject{
@@ -36,6 +39,7 @@ class videoDecoder : public QObject{
         QImage getImage();
         bool isLastFrameOk();
         int64_t getLastFrameTime();
+        int64_t getLastSampleTime();
         int64_t getVideoDuration();
         int getLastFrameNumber();
         bool isVideoStream();
@@ -44,6 +48,8 @@ class videoDecoder : public QObject{
         bool isVideoFinished();
         int getAudioStream();
         int getVideoStream();
+        bool hasAudioStream();
+        bool hasVideoStream();
 
         void decodeAndPlayAudioSample();
         void setAudioFormat();
@@ -51,6 +57,13 @@ class videoDecoder : public QObject{
 
         void getAndSaveInfoInFile(QFile *file);
 
+        QString getVideoCodecInfo();
+        QString getAudioCodecInfo();
+        QString getDimensions();
+        QString getBitrate();
+        QString getChannelsNumber();
+        QString getVideoCodecName();
+        QString getAudioCodecName();
 
     private:
         AVFormatContext *formatCtx;
@@ -65,6 +78,7 @@ class videoDecoder : public QObject{
         int desiredFrameTime;
         bool lastFrameOk;
         int64_t lastFrameTime;
+        int64_t lastSampleTime;
         int lastFrameNumber;
         QImage lastFrame;
         AVPacket packet;

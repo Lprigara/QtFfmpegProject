@@ -9,7 +9,6 @@ videoEncoder::videoEncoder(){
 void videoEncoder::initCodec(){
    av_register_all();
    avcodec_register_all();
-   avfilter_register_all();
 
    printf("License: %s\n",avformat_license());
    printf("AVCodec version %d\n", avformat_version());
@@ -157,6 +156,8 @@ AVCodecID videoEncoder::getVideoCodecID(QString videoCodecStr){
         return AV_CODEC_ID_MPEG1VIDEO;
     else if(videoCodecStr == "MPEG2")
         return AV_CODEC_ID_MPEG2VIDEO;
+    else if(videoCodecStr == "")
+        return AV_CODEC_ID_NONE;
 }
 
 AVCodecID videoEncoder::getAudioCodecID(QString audioCodecStr){
@@ -164,6 +165,8 @@ AVCodecID videoEncoder::getAudioCodecID(QString audioCodecStr){
         return AV_CODEC_ID_AAC;
     else if(audioCodecStr == "MP3")
         return AV_CODEC_ID_MP3;
+    else if(audioCodecStr == "")
+        return AV_CODEC_ID_NONE;
 }
 
 bool videoEncoder::openOutputFile(const char *filename, AVCodecID audioCodec, AVCodecID videoCodec){
@@ -178,6 +181,9 @@ bool videoEncoder::openOutputFile(const char *filename, AVCodecID audioCodec, AV
         if(inFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO){
             inVideoStream = inFormatCtx->streams[i];
             videoDecoderCtx = inVideoStream->codec;
+            if(videoCodec == AV_CODEC_ID_NONE){
+                videoCodec = videoDecoderCtx->codec_id;
+            }
 
             videoEncoder_ = avcodec_find_encoder(videoCodec);
             if(!videoEncoder_){
@@ -201,7 +207,6 @@ bool videoEncoder::openOutputFile(const char *filename, AVCodecID audioCodec, AV
             AVRational rational1 = {1,50};
             videoEncoderCtx->time_base = rational1;
             videoEncoderCtx->pix_fmt = AV_PIX_FMT_YUV420P;
-
 
            videoEncoderCtx->sample_aspect_ratio = videoDecoderCtx->sample_aspect_ratio;
            if (videoEncoder_->pix_fmts)
@@ -230,7 +235,9 @@ bool videoEncoder::openOutputFile(const char *filename, AVCodecID audioCodec, AV
             inAudioStream = inFormatCtx->streams[i];
             audioDecoderCtx = inAudioStream->codec;
             audioEncoderCtx = outAudioStream->codec;
-
+            if(audioCodec == AV_CODEC_ID_NONE){
+                audioCodec = audioDecoderCtx->codec_id;
+            }
             audioEncoder = avcodec_find_encoder(audioCodec);
             if(!audioEncoder){
                 qDebug()<< "Necessary encoder not found";
@@ -285,10 +292,13 @@ bool videoEncoder::openOutputFile(const char *filename, AVCodecID audioCodec, AV
 bool videoEncoder::transcode(const char* in_filename, const char* out_filename, QString audioCodec, QString videoCodec){
     AVFrame *frame = NULL;
     int got_frame = 0;
-    i = 0;
+
+    AVCodecID audioCodecID = getAudioCodecID(audioCodec);
+    AVCodecID videoCodecID = getVideoCodecID(videoCodec);
+
     if (!openInputFile(in_filename))
         return false;
-    if (!openOutputFile(out_filename, getAudioCodecID(audioCodec), getVideoCodecID(videoCodec)))
+    if (!openOutputFile(out_filename, audioCodecID, videoCodecID))
         return false;
 
     /* read all packets */
@@ -344,7 +354,6 @@ bool videoEncoder::encodeWriteFrame(AVFrame *frame, int stream_index, int gotFra
     AVPacket encodedPacket;
 
    qDebug()<< "Encoding frame";
-    /* encode filtered frame */
     encodedPacket.data = NULL;
     encodedPacket.size = 0;
     av_init_packet(&encodedPacket);
@@ -378,7 +387,6 @@ bool videoEncoder::encodeWriteFrame(AVFrame *frame, int stream_index, int gotFra
 
     writeFrameInOutput(encodedPacket);
 }
-
 
 bool videoEncoder::writeFrameInOutput(AVPacket encodedPacket){
     qDebug()<<"Muxing frame";

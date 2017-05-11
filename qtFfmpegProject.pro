@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
-QT += multimedia
+QT += multimedia sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -26,27 +26,71 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    videodecoder.cpp
+    videodecoder.cpp \
+    videoinfo.cpp \
+    utilities.cpp \
+    videoencoder.cpp \
+    videocutter.cpp \
+    audioextractor.cpp \
+    videoscaler.cpp \
+    audiofilter.cpp \
+    videoextractor.cpp \
+    watermark.cpp
 
 HEADERS  += mainwindow.h \
-    videodecoder.h
+    videodecoder.h \
+    videoinfo.h \
+    utilities.h \
+    videoencoder.h \
+    videocutter.h \
+    audioextractor.h \
+    videoscaler.h \
+    audiofilter.h \
+    videoextractor.h \
+    watermark.h
 
 FORMS    += mainwindow.ui
 
 QMAKE_CXXFLAGS += -D__STDC_CONSTANT_MACROS
 
-LIBS += -LC:\Users\Leonor\Desktop\ffmpeg\ffmpeg\lib
+INCLUDEPATH += $$PWD/ffmpeg_build/include \
+$$PWD/libao-1.2.0/libraries/include\
+/home/leonor/Descargas/SDL-1.2.15/include
+
+LIBS += -pthread
+LIBS += -L$$PWD/ffmpeg_build/lib
 LIBS += -lavdevice
 LIBS += -lavfilter
 LIBS += -lavformat
 LIBS += -lavcodec
+LIBS += -lavresample
+LIBS += -ldl
+LIBS += -lXfixes
+LIBS += -lXext
+LIBS += -lasound
+LIBS += -lSDL
+LIBS += -lvorbisenc
+LIBS += -lvorbis
+LIBS += -ltheoraenc
+LIBS += -ltheoradec
+LIBS += -logg
+LIBS += -lmp3lame
 LIBS += -lz
+LIBS += -lrt
 LIBS += -lswresample
 LIBS += -lswscale
 LIBS += -lavutil
+LIBS += -lfreetype
+LIBS += -lpostproc
+LIBS += -lass
 LIBS += -lm
-
-INCLUDEPATH += ffmpeg/include
+LIBS += -lvdpau
+LIBS += -lva
+LIBS += -lX11
+LIBS += -lva-drm
+LIBS += -lva-x11
+LIBS += -L$$PWD/libao-1.2.0/libraries/lib
+LIBS += -lao
 
 RESOURCES += \
     recursos.qrc

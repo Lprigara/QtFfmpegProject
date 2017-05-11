@@ -7,7 +7,9 @@
 #include "videocutter.h"
 #include "audioextractor.h"
 #include "videoscaler.h"
-
+#include "audiofilter.h"
+#include "videoextractor.h"
+#include "watermark.h"
 #include <QtSql>
 
 #include <QMainWindow>
@@ -17,7 +19,6 @@
 #include <QAudioOutput>
 #include <QImage>
 #include <QPainter>
-#include <QListWidgetItem>
 
 #include <QMessageBox>
 #include <QFileInfo>
@@ -43,6 +44,7 @@ class MainWindow : public QMainWindow {
         void displayFrame(QImage image);
         void finishVideo();
         void initVariables();
+        void initGraphicElements();
         void play();
         void pause();
         void configureGraphicElements();
@@ -52,12 +54,13 @@ class MainWindow : public QMainWindow {
         void prepareVideoConfig();
         void prepareAudioConfig();
         void exportVideo(QString filename, bool vfr);
+        void loadInformation();
+        void fillButtonLabels();
 
     private slots:
         void on_stopButton_clicked();
         void on_playPauseButton_clicked();
         void on_getImageButton_clicked();
-        void on_listWidget_itemPressed(QListWidgetItem *item);
         void on_playAudioChannelButton_clicked();
         void on_playVideoChannelButton_clicked();
         void on_getInfoButton_clicked();
@@ -68,6 +71,9 @@ class MainWindow : public QMainWindow {
         void on_cutVideoButton_clicked();
         void on_extractAudioButton_clicked();
         void on_scaleButton_clicked();
+        void on_extractVideoButton_clicked();
+        void on_saveInBBDD_clicked();
+        void on_watermarkButton_clicked();
 
 private:
         Ui::MainWindow *ui;
@@ -75,11 +81,15 @@ private:
         videoEncoder videoEncoder_;
         videoCutter videoCutter_;
         audioExtractor audioExtractor_;
+        videoExtractor videoExtractor_;
         videoScaler videoScaler_;
+        audioFilter audioFilter_;
+        watermark watermark_;
         bool videoPaused;
         int lastFrameProcessed;
         bool videoStopped;
         QString fileName;
+        QString ruta;
         uint64_t videoDuration;
         bool playAudio;
         bool playVideo;

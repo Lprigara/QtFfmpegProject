@@ -9,15 +9,11 @@ extern "C" {
     #include <libavformat/avformat.h>
     #include <libswscale/swscale.h>
     #include <libswresample/swresample.h>
-    #include<libavutil/opt.h>
-    #include<libavutil/avstring.h>
+    #include <libavutil/opt.h>
+    #include <libavutil/avstring.h>
     #include <libavutil/timestamp.h>
     #include <libavutil/avassert.h>
     #include <libavutil/mathematics.h>
-    #include <libavfilter/avfilter.h>
-    #include <libavfilter/buffersink.h>
-    #include <libavfilter/avfiltergraph.h>
-    #include <libavfilter/buffersrc.h>
 }
 
 
@@ -36,8 +32,6 @@ public:
     AVCodecID getAudioCodecID(QString audioCodecStr);
     AVCodecID getVideoCodecID(QString videoCodecStr);
     bool writeFrameInOutput(AVPacket encodedPacket);
-
-
 
 private:
     AVOutputFormat *outputFormat;
