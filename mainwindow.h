@@ -56,6 +56,8 @@ class MainWindow : public QMainWindow {
         void exportVideo(QString filename, bool vfr);
         void loadInformation();
         void fillButtonLabels();
+        void displayFrame2(QImage image);
+        void process();
 
     private slots:
         void on_stopButton_clicked();

@@ -2,6 +2,7 @@
 #define WATERMARK_H
 
 #include <stdio.h>
+#include <QImage>
 
 extern "C"{
     #include "libavcodec/avcodec.h"
@@ -31,6 +32,13 @@ public:
     void checkDelays();
     void decodeAndPlayAudioSample();
     void setAudioFormat();
+    bool convertImage(AVFrame frame);
+    void decodeVideoFrame();
+    bool readNextFrame();
+    bool isVideoStream();
+    bool isAudioStream();
+    QImage getImage();
+    void decodeAudioFrame();
 
 private:
 
@@ -58,6 +66,10 @@ private:
     AVStream *video_st;
     AVPacket packet;
     AVFrame *audioFrame;
+    QImage lastFrame;
+    struct SwsContext *imgConvertCtx;
+    AVFrame *pFrame;
+    AVFrame *pFrame_out;
 
 
 };

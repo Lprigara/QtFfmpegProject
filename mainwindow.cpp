@@ -189,17 +189,16 @@ void MainWindow::processMultimediaContent(){
         QApplication::processEvents();
         if(videoStopped == true){ return; }
 
-        if(playVideo)
+           if(playVideo)
             if(videoDecoder_.isVideoStream()){
                 processVideo();
             }
+            if(playAudio)
+                if(videoDecoder_.isAudioStream()){
+                    processAudio();
+                }
 
-        if(playAudio)
-            if(videoDecoder_.isAudioStream()){
-                processAudio();
-            }
-
-        lastFrameProcessed ++;
+            lastFrameProcessed ++;
     }
 
     videoDecoder_.checkDelays();
@@ -207,6 +206,7 @@ void MainWindow::processMultimediaContent(){
     if(videoDecoder_.isVideoFinished())
        finishVideo();
 }
+
 
 void MainWindow::processVideo(){
     videoDecoder_.decodeFrame(lastFrameProcessed);
@@ -482,11 +482,52 @@ void MainWindow::on_saveInBBDD_clicked(){
 }
 
 void MainWindow::on_watermarkButton_clicked(){
+    //QString in = QFileDialog::getOpenFileName(this, "Archivo", QDir::currentPath(), "Video (*.mp4)");
+
     QString watermark = QFileDialog::getOpenFileName(this, "Abrir marca de agua", QDir::currentPath(), "Imagen (*.png)");
-    QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
+    //QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
     QApplication::processEvents();
 
-    watermark_.main(ruta.toLocal8Bit().constData(), watermark.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
-    QApplication::processEvents();
+    watermark_.main(ruta.toLocal8Bit().constData(), watermark.toLocal8Bit().constData(), "");
+    process();
+
+}
+
+void MainWindow::process(){
+
+    while(watermark_.readNextFrame()){
+        QApplication::processEvents();
+        if(watermark_.isVideoStream()){
+            watermark_.decodeVideoFrame();
+            QImage imagen = watermark_.getImage();
+            displayFrame2(imagen);
+        }
+        if(watermark_.isAudioStream()){
+            watermark_.decodeAudioFrame();
+        }
+        watermark_.checkDelays();
+    }
+}
+
+
+void MainWindow::displayFrame2(QImage image){
+   // Convert the QImage to a QPixmap for display
+   QPixmap pixmap;
+   pixmap.convertFromImage(image);
+   pixmap = pixmap.scaledToHeight(ui->labelVideoFrame->height());
+
+   // Display the QPixmap
+   ui->labelVideoFrame->setAlignment(Qt::AlignCenter);
+   ui->labelVideoFrame->setPixmap(pixmap);
+
+   //QString timeText = printFormatedTime(videoDecoder_.getLastFrameTime()) + " ----- " + printFormatedTime(videoDuration);
+   // Display the video size
+   //ui->labelVideoInfo->setText(timeText);
+
+   //Repaint
+   ui->labelVideoFrame->repaint();
+   //ui->labelVideoInfo->repaint();
+
+   //ui->displayBar->setValue(videoDecoder_.getLastFrameTime());
 
 }
