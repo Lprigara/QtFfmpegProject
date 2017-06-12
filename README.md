@@ -31,6 +31,7 @@ las librerías en la carpeta del proyecto:
 --enable-iconv --enable-zlib --enable-nvenc --enable-nonfree --enable-libx264
  
 make -r
+
 make install
 
 Abrir el proyecto con Qt creator y compilar con el compilador Qt_5_8_0_GCC_64bit-Debug
