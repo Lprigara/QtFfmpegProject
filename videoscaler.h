@@ -26,7 +26,7 @@ public:
      */
     void initVars();
     /**
-     * @brief Abrir archivo multimedia de entrada
+     * @brief Abre el fichero de entrada y crea un contenedor de entrada
      * @param filename
      * @return
      */

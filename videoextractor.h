@@ -53,7 +53,7 @@ public:
 
     /**
      * @brief Crea un contenedor de salida con la extensión del fichero destino
-     * @param inputFileName
+     * @param outputFileName
      * @return
      */
     bool openOutputFile(const char* outputFileName);
