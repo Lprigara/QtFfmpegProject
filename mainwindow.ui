@@ -20,7 +20,7 @@
    <widget class="QLabel" name="labelVideoInfo">
     <property name="geometry">
      <rect>
-      <x>380</x>
+      <x>460</x>
       <y>390</y>
       <width>181</width>
       <height>21</height>
@@ -33,7 +33,7 @@
    <widget class="QPushButton" name="getImageButton">
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>200</x>
       <y>390</y>
       <width>121</width>
       <height>20</height>
@@ -46,7 +46,7 @@
    <widget class="QPushButton" name="playPauseButton">
     <property name="geometry">
      <rect>
-      <x>191</x>
+      <x>141</x>
       <y>390</y>
       <width>21</width>
       <height>20</height>
@@ -59,7 +59,7 @@
    <widget class="QPushButton" name="stopButton">
     <property name="geometry">
      <rect>
-      <x>131</x>
+      <x>81</x>
       <y>390</y>
       <width>21</width>
       <height>20</height>
@@ -101,7 +101,7 @@
    <widget class="QPushButton" name="nextFrameButton">
     <property name="geometry">
      <rect>
-      <x>221</x>
+      <x>171</x>
       <y>390</y>
       <width>20</width>
       <height>20</height>
@@ -114,7 +114,7 @@
    <widget class="QPushButton" name="previousFrameButton">
     <property name="geometry">
      <rect>
-      <x>161</x>
+      <x>111</x>
       <y>390</y>
       <width>20</width>
       <height>20</height>
@@ -231,7 +231,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>4</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="informationTab">
      <attribute name="title">
@@ -656,6 +656,11 @@
       </item>
       <item>
        <property name="text">
+        <string>OGG (Vorbis)</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
         <string>AAC</string>
        </property>
       </item>
@@ -694,12 +699,27 @@
       </item>
       <item>
        <property name="text">
+        <string>H264</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>DivX</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
         <string>MPEG1</string>
        </property>
       </item>
       <item>
        <property name="text">
         <string>MPEG2</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>MP4</string>
        </property>
       </item>
      </widget>
@@ -1134,14 +1154,14 @@
    <widget class="QPushButton" name="watermarkButton">
     <property name="geometry">
      <rect>
-      <x>600</x>
-      <y>250</y>
-      <width>80</width>
+      <x>330</x>
+      <y>390</y>
+      <width>121</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>PushButton</string>
+     <string>Añadir Marca de agua</string>
     </property>
    </widget>
    <zorder>tabWidget</zorder>

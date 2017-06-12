@@ -1,0 +1,36 @@
+digraph "Graphical Class Hierarchy" {
+	graph [bb="0,0,190,20",
+		rankdir=LR
+	];
+	node [fontname=Helvetica,
+		fontsize=10,
+		label="\N",
+		shape=record
+	];
+	edge [fontname=Helvetica,
+		fontsize=10,
+		labelfontname=Helvetica,
+		labelfontsize=10
+	];
+	Node1	 [color=grey75,
+		fillcolor=white,
+		height=0.27778,
+		label=QMainWindow,
+		pos="40,10",
+		rects="0,0.5,80,19.5",
+		style=filled,
+		width=1.1111];
+	Node2	 [URL="$class_main_window.html",
+		color=black,
+		fillcolor=white,
+		height=0.27778,
+		label=MainWindow,
+		pos="153,10",
+		rects="116.5,0.5,189.5,19.5",
+		style=filled,
+		width=1.0139];
+	Node1 -> Node2	 [color=midnightblue,
+		dir=back,
+		pos="s,80.134,10 90.237,10 98.97,10 107.91,10 116.18,10",
+		style=solid];
+}

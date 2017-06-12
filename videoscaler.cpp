@@ -17,19 +17,16 @@ void videoScaler::initVars(){
 void videoScaler::initCodec(){
     av_register_all();
     avcodec_register_all();
-
-   qDebug() << "License: " << avformat_license();
-   qDebug() << "AVCodec version: " << avformat_version();
 }
 
 bool videoScaler::openInputFile(const char *filename){
     if (avformat_open_input(&inFormatCtx, filename, NULL, NULL) < 0) {
-        qDebug()<< "Cannot open input file";
+        printf("Cannot open input file");
         return false;
     }
 
     if (avformat_find_stream_info(inFormatCtx, NULL) < 0) {
-        qDebug()<<"Cannot find stream information";
+        printf("Cannot find stream information");
         return false;
     }
 
@@ -38,12 +35,12 @@ bool videoScaler::openInputFile(const char *filename){
             videoDecoderCtx = inFormatCtx->streams[i]->codec;
             videoDecoder =  avcodec_find_decoder(videoDecoderCtx->codec_id);
             if(videoDecoder == NULL){
-                qDebug() << "Codec not found";
+                printf("Codec not found");
                 return false;
             }
 
             if(avcodec_open2(videoDecoderCtx, videoDecoder, NULL) <0){
-                qDebug() <<"Failed to open video decoder";
+                printf("Failed to open video decoder");
                 return false;
             }
         }
@@ -51,11 +48,11 @@ bool videoScaler::openInputFile(const char *filename){
             audioDecoderCtx = inFormatCtx->streams[i]->codec;
             audioDecoder = avcodec_find_decoder(audioDecoderCtx->codec_id);
             if(audioDecoder == NULL){
-                qDebug()<< "Codec not found";
+                printf("Codec not found");
                 return false;
             }
             if(avcodec_open2(audioDecoderCtx, audioDecoder, NULL) <0){
-                qDebug() <<"Failed to open audio decoder";
+                printf("Failed to open audio decoder");
                 return false;
             }
         }
@@ -65,10 +62,10 @@ bool videoScaler::openInputFile(const char *filename){
     return true;
 }
 
-bool videoScaler::openOutputFile(const char *filename){
+bool videoScaler::createOutputFile(const char *filename){
     avformat_alloc_output_context2(&outFormatCtx, NULL, NULL, filename);
     if (!outFormatCtx) {
-        qDebug() << "Could not create output context";
+        printf("Could not create output context");
         return false;
     }
 
@@ -79,19 +76,19 @@ bool videoScaler::openOutputFile(const char *filename){
 
             videoEncoder_ = avcodec_find_encoder(AV_CODEC_ID_MPEG2VIDEO);
             if(!videoEncoder_){
-                qDebug()<< "Necessary encoder not found";
+                printf("Necessary encoder not found");
                 return false;
             }
 
             videoEncoderCtx = avcodec_alloc_context3(videoEncoder_);
             if (!videoEncoderCtx) {
-                qDebug()<< "Could not allocate video codec context";
+                printf("Could not allocate video codec context");
                 return false;
             }
 
             outVideoStream = avformat_new_stream(outFormatCtx, videoEncoder_);
             if(!outVideoStream){
-                qDebug()<< "Failed allocating output stream";
+                printf("Failed allocating output stream");
                 return false;
             }
 
@@ -109,7 +106,7 @@ bool videoScaler::openOutputFile(const char *filename){
                videoEncoderCtx->pix_fmt = videoDecoderCtx->pix_fmt;
 
             if (avcodec_open2(videoEncoderCtx, videoEncoder_, NULL) < 0) {
-                qDebug() << "Cannot open video encoder";
+                printf("Cannot open video encoder");
                 return false;
             }
 
@@ -121,7 +118,7 @@ bool videoScaler::openOutputFile(const char *filename){
         }else if(inFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO){
             outAudioStream = avformat_new_stream(outFormatCtx, NULL);
             if(!outAudioStream){
-                qDebug()<< "Failed allocating output stream";
+                printf("Failed allocating output stream");
                 return false;
             }
             inAudioStream = inFormatCtx->streams[i];
@@ -130,7 +127,7 @@ bool videoScaler::openOutputFile(const char *filename){
 
             audioEncoder = avcodec_find_encoder(audioDecoderCtx->codec_id);
             if(!audioEncoder){
-                qDebug()<< "Necessary encoder not found";
+                printf("Necessary encoder not found");
                 return false;
             }
 
@@ -142,7 +139,7 @@ bool videoScaler::openOutputFile(const char *filename){
             audioEncoderCtx->time_base = rational;
 
             if (avcodec_open2(audioEncoderCtx, audioEncoder, NULL) < 0) {
-                qDebug() << "Cannot open audio encoder";
+                printf("Cannot open audio encoder");
                 return false;
             }
 
@@ -155,7 +152,7 @@ bool videoScaler::openOutputFile(const char *filename){
         else {
             // if this stream must be remuxed
             if (avcodec_copy_context(outFormatCtx->streams[i]->codec,inFormatCtx->streams[i]->codec) < 0) {
-                qDebug()<< "Copying stream context failed";
+                printf("Copying stream context failed");
                 return false;
             }
         }
@@ -163,14 +160,14 @@ bool videoScaler::openOutputFile(const char *filename){
 
     if (!(outFormatCtx->oformat->flags & AVFMT_NOFILE)) {
         if (avio_open(&outFormatCtx->pb, filename, AVIO_FLAG_WRITE) < 0) {
-            qDebug()<< "Could not open output file " << filename;
+            printf("Could not open output file \s", filename);
             return false;
         }
     }
 
     /* init muxer, write output file header */
     if (avformat_write_header(outFormatCtx, NULL) < 0) {
-        qDebug()<< "Error occurred when opening output file";
+        printf("Error occurred when opening output file");
         return false;
     }
 
@@ -179,19 +176,19 @@ bool videoScaler::openOutputFile(const char *filename){
     return true;
 }
 
-bool videoScaler::processScaled(const char* in_filename, const char* out_filename, int height, int width){
+bool videoScaler::scale(const char* in_filename, const char* out_filename, int height, int width){
     heightDst = height;
     widthDst = width;
 
     if (!openInputFile(in_filename))
         return false;
-    if (!openOutputFile(out_filename))
+    if (!createOutputFile(out_filename))
         return false;
 
     while (av_read_frame(inFormatCtx, &packet) >= 0 ){
         frame = av_frame_alloc();
         if (!frame) {
-            qDebug()<<"Could not alocate frame";
+            printf("Could not alocate frame");
             return false;
         }
 
@@ -203,13 +200,13 @@ bool videoScaler::processScaled(const char* in_filename, const char* out_filenam
         if(inFormatCtx->streams[packet.stream_index]->codec->codec_type == AVMEDIA_TYPE_VIDEO){
             if(avcodec_decode_video2(inFormatCtx->streams[packet.stream_index]->codec, frame, &gotFrame, &packet) <0){
                 av_frame_free(&frame);
-                qDebug()<< "Decoding failed";
+                printf("Decoding failed");
                 return false;
             }
         }else if(inFormatCtx->streams[packet.stream_index]->codec->codec_type == AVMEDIA_TYPE_AUDIO){
             if(avcodec_decode_audio4(inFormatCtx->streams[packet.stream_index]->codec, frame, &gotFrame, &packet) <0){
                 av_frame_free(&frame);
-                qDebug()<< "Decoding failed";
+                printf("Decoding failed");
                 return false;
             }
         }
@@ -221,7 +218,7 @@ bool videoScaler::processScaled(const char* in_filename, const char* out_filenam
             if(packet.stream_index == 0){
                 frame = scaleFrame(frame);
                 if(frame == NULL){
-                    qDebug()<<"Fail to scale video";
+                    printf("Fail to scale video");
                     return false;
                 }
             }
@@ -266,7 +263,7 @@ AVFrame* videoScaler::scaleFrame(AVFrame *frame){
 
     if(imgConvertCtx == NULL)
     {
-       qWarning() <<"Cannot initialize the conversion context!\n";
+       printf("Cannot initialize the conversion context!\n");
        return NULL;
     }
 
@@ -280,14 +277,16 @@ bool videoScaler::encodeFrame(AVFrame *frame, int stream_index) {
     encodedPacket.size = 0;
     av_init_packet(&encodedPacket);
 
+    //If is video type, encode video frame
     if(inFormatCtx->streams[stream_index]->codec->codec_type == AVMEDIA_TYPE_VIDEO){
         if(avcodec_encode_video2(outFormatCtx->streams[stream_index]->codec, &encodedPacket, frame, &gotFrame) <0){
-            qDebug()<<"Failed to encode video";
+            printf("Failed to encode video");
             return false;
         }
+    //If is audio type, encode audio frame
     }else if (inFormatCtx->streams[stream_index]->codec->codec_type == AVMEDIA_TYPE_AUDIO){
         if(avcodec_encode_audio2(outFormatCtx->streams[stream_index]->codec, &encodedPacket, frame, &gotFrame) <0){
-            qDebug()<<"Failed to encode audio";
+            printf("Failed to encode audio");
             return false;
         }
     }
@@ -303,9 +302,10 @@ bool videoScaler::encodeFrame(AVFrame *frame, int stream_index) {
     return true;
 }
 
+//Mux the modified frames
 bool videoScaler::muxEncodedPacket(){
     if(av_interleaved_write_frame(outFormatCtx, &encodedPacket) <0){
-        qDebug() << "Failed to mux";
+        printf("Failed to mux");
         return false;
     }
 

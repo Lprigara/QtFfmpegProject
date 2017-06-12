@@ -27,27 +27,25 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += main.cpp\
         mainwindow.cpp \
     videodecoder.cpp \
-    videoinfo.cpp \
     utilities.cpp \
-    videoencoder.cpp \
     videocutter.cpp \
     audioextractor.cpp \
     videoscaler.cpp \
-    audiofilter.cpp \
     videoextractor.cpp \
-    watermark.cpp
+    overlaperImage.cpp \
+    videotranscode.cpp \
+    videoremuxing.cpp
 
 HEADERS  += mainwindow.h \
     videodecoder.h \
-    videoinfo.h \
     utilities.h \
-    videoencoder.h \
     videocutter.h \
     audioextractor.h \
     videoscaler.h \
-    audiofilter.h \
     videoextractor.h \
-    watermark.h
+    overlaperImage.h \
+    videotranscode.h \
+    videoremuxing.h
 
 FORMS    += mainwindow.ui
 
@@ -55,7 +53,6 @@ QMAKE_CXXFLAGS += -D__STDC_CONSTANT_MACROS
 
 INCLUDEPATH += $$PWD/ffmpeg_build/include \
 $$PWD/libao-1.2.0/libraries/include\
-/home/leonor/Descargas/SDL-1.2.15/include
 
 LIBS += -pthread
 LIBS += -L$$PWD/ffmpeg_build/lib
@@ -64,11 +61,11 @@ LIBS += -lavfilter
 LIBS += -lavformat
 LIBS += -lavcodec
 LIBS += -lavresample
+LIBS += -lx264
 LIBS += -ldl
 LIBS += -lXfixes
 LIBS += -lXext
 LIBS += -lasound
-LIBS += -lSDL
 LIBS += -lvorbisenc
 LIBS += -lvorbis
 LIBS += -ltheoraenc

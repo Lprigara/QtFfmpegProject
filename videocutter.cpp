@@ -8,23 +8,27 @@ videoCutter::videoCutter(){
     outFormatCtx = NULL;
 }
 
-bool videoCutter::cutVideo(double startTime, double endTime, const char* inFilename, const char* outFilename) {
+bool videoCutter::cut(double startTime, double endTime, const char* inFilename, const char* outFilename) {
 
+    //Open the input file and allocate the information in container
     if (avformat_open_input(&inFormatCtx, inFilename, 0, 0) < 0) {
-        qDebug()<< "Could not open input file " << inFilename;
+        printf("Could not open input file %s", inFilename);
         return false;
     }
 
+    //Retrieve streams information
     if (avformat_find_stream_info(inFormatCtx, 0) < 0) {
-        qDebug()<< "Failed to retrieve input stream information";
+        printf("Failed to retrieve input stream information");
         return false;
     }
 
+    //Dump information in screen
     av_dump_format(inFormatCtx, 0, inFilename, 0);
 
+    //Create an output container with the information relative to outfile extension
     avformat_alloc_output_context2(&outFormatCtx, NULL, NULL, outFilename);
     if (!outFormatCtx) {
-        qDebug() << "Could not create output context";
+        printf("Could not create output context");
         return false;
     }
 
@@ -32,14 +36,16 @@ bool videoCutter::cutVideo(double startTime, double endTime, const char* inFilen
 
     for (int i = 0; i < inFormatCtx->nb_streams; i++) {
         inStream = inFormatCtx->streams[i];
+        //Create new stream in output container
         outStream = avformat_new_stream(outFormatCtx, inStream->codec->codec);
         if (!outStream) {
-            qDebug()<< "Failed allocating output stream";
+            printf("Failed allocating output stream");
             return false;
         }
 
+        //Copy input codec information in output codec
         if(avcodec_copy_context(outStream->codec, inStream->codec) < 0) {
-            qDebug() << "Failed to copy context from input to output stream codec context";
+            printf("Failed to copy context from input to output stream codec context");
             return false;
         }
 
@@ -48,22 +54,25 @@ bool videoCutter::cutVideo(double startTime, double endTime, const char* inFilen
             outStream->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
+    //Dump info in screen
     av_dump_format(outFormatCtx, 0, outFilename, 1);
 
     if (!(outputFormat->flags & AVFMT_NOFILE)) {
         if(avio_open(&outFormatCtx->pb, outFilename, AVIO_FLAG_WRITE) <0) {
-            qDebug()<< "Could not open output file '%s'" << outFilename;
+            printf("Could not open output file '%s'", outFilename);
             return false;
         }
     }
 
+    //Open ouput file to write in it
     if(avformat_write_header(outFormatCtx, NULL) < 0) {
-        qDebug() << "Error occurred when opening output file";
+        printf("Error occurred when opening output file");
         return false;
     }
 
+    //Go to frame seek
     if(av_seek_frame(inFormatCtx, -1, startTime*AV_TIME_BASE, AVSEEK_FLAG_ANY) < 0) {
-        qDebug() << "Error seek";
+        printf("Error seek");
         return false;
     }
 
@@ -72,6 +81,7 @@ bool videoCutter::cutVideo(double startTime, double endTime, const char* inFilen
     int64_t *pts_start_from = (int64_t*)malloc(sizeof(int64_t) * inFormatCtx->nb_streams);
     memset(pts_start_from, 0, sizeof(int64_t) * inFormatCtx->nb_streams);
 
+    //iterate over the frames
     while (av_read_frame(inFormatCtx, &packet) >= 0) {
         inStream  = inFormatCtx->streams[packet.stream_index];
         outStream = outFormatCtx->streams[packet.stream_index];
@@ -101,7 +111,7 @@ bool videoCutter::cutVideo(double startTime, double endTime, const char* inFilen
         packet.pos = -1;
 
         if(av_interleaved_write_frame(outFormatCtx, &packet) < 0) {
-            qDebug()<< "Error muxing packet";
+            printf("Error muxing packet");
             return false;
         }
         av_free_packet(&packet);

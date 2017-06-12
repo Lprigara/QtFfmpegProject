@@ -17,8 +17,14 @@ extern "C" {
     #include "libavutil/intreadwrite.h"
 }
 
+/**
+ * @brief Clase con funcionalidades para extraer la información de un contenido multimedia a un archivo
+ */
 class utilities{
     public:
+         /**
+         * @brief Constructor
+         */
         utilities();
 
         static void dumpFormat(QFile *file, AVFormatContext* formatCtx, int index, int is_output);

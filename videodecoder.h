@@ -6,8 +6,6 @@
 #include <QDebug>
 #include <QFile>
 
-#include "videoinfo.h"
-
 extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
@@ -21,11 +19,25 @@ extern "C" {
     #include <libswscale/swscale.h>
 }
 
+/**
+ * @brief Clase que permite decodificar las pistas del contenedor para reproducirlas en la interfaz
+ */
 class videoDecoder : public QObject{
     Q_OBJECT
     public:
+        /**
+         * @brief Constructor
+         * @param parent
+         */
         explicit videoDecoder(QObject *parent = 0);
+        /**
+         * @brief Inicializar variables
+         */
         void initVariables();
+        /**
+         * @brief inicializar códecs
+         * @return
+         */
         bool initCodec();
 
         bool loadVideo(QString fileName);

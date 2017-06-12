@@ -377,7 +377,7 @@ void MainWindow::on_formatButton_clicked(){
     dstFile = dstFile.append("." + formatDst.toLower());
 
     if(!ruta.isNull() && !dstFile.isNull()){
-        bool remuxingOk = videoEncoder_.remuxing(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
+        bool remuxingOk = videoRemuxing_.remuxing(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
         if(remuxingOk){
             QMessageBox::information(this, "Info", "El archivo ha cambiado de formato correctamente");
         }else{
@@ -392,7 +392,7 @@ void MainWindow::on_transcodeButton_clicked(){
     if(!ruta.isNull() && !dstFile.isNull()){
         QString audioCodec = ui->audioCodecSelector->currentText();
         QString videoCodec = ui->videoCodecSelector->currentText();
-        bool transcodeOk = videoEncoder_.transcode(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData(), audioCodec, videoCodec);
+        bool transcodeOk = videoEncoder_.transcode(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData(), audioCodec.toLocal8Bit().constData(), videoCodec.toLocal8Bit().constData());
         if(transcodeOk){
             QMessageBox::information(this, "Info", "El archivo ha cambiado de códecs correctamente");
         }else{
@@ -408,7 +408,7 @@ void MainWindow::on_cutVideoButton_clicked(){
         double startVideo = ui->startVideoSpinBox->value();
         double finishVideo = ui->finishVideoSpinBox->value();
 
-        bool cutOk = videoCutter_.cutVideo(startVideo, finishVideo, ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
+        bool cutOk = videoCutter_.cut(startVideo, finishVideo, ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
         if(cutOk){
             QMessageBox::information(this, "Info", "La segmentación del vídeo ha sido satisfactoria");
         }else{
@@ -422,7 +422,7 @@ void MainWindow::on_cutVideoButton_clicked(){
 void MainWindow::on_extractAudioButton_clicked(){
     QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
     if(!ruta.isNull() && !dstFile.isNull()){
-        bool extractAudioOk = audioExtractor_.convert(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
+        bool extractAudioOk = audioExtractor_.extract(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
         if(extractAudioOk){
             QMessageBox::information(this, "Info", "La extracción del audio ha sido satisfactoria");
         }else{
@@ -438,7 +438,7 @@ void MainWindow::on_extractVideoButton_clicked(){
     dstFile = dstFile.left(lastPoint);
     dstFile = dstFile.append(".mkv");
     if(!ruta.isNull() && !dstFile.isNull()){
-        bool extractAudioOk = videoExtractor_.convert(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
+        bool extractAudioOk = videoExtractor_.extract(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData());
         if(extractAudioOk){
             QMessageBox::information(this, "Info", "La extracción del vídeo ha sido satisfactoria");
         }else{
@@ -454,7 +454,7 @@ void MainWindow::on_scaleButton_clicked(){
     int height = ui->height->value();
     int width = ui->width->value();
     if(!ruta.isNull() && !dstFile.isNull()){
-        bool videoScalerOk = videoScaler_.processScaled(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData(), height, width);
+        bool videoScalerOk = videoScaler_.scale(ruta.toLocal8Bit().constData(), dstFile.toLocal8Bit().constData(), height, width);
         if(videoScalerOk){
             QMessageBox::information(this, "Info", "El vídeo ha sido escalado satisfactoriamente");
         }else{
@@ -488,7 +488,7 @@ void MainWindow::on_watermarkButton_clicked(){
     //QString dstFile = QFileDialog::getSaveFileName(this, "Archivo destino", QString(), "Video");
     QApplication::processEvents();
 
-    watermark_.main(ruta.toLocal8Bit().constData(), watermark.toLocal8Bit().constData(), "");
+    watermark_.overlap(ruta.toLocal8Bit().constData(), watermark.toLocal8Bit().constData(), "");
     process();
 
 }

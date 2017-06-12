@@ -15,11 +15,11 @@ videoExtractor::videoExtractor(){
     videoStream = NULL;
 }
 
-bool videoExtractor::convert(const char* inputFileName, const char* outputFileName){
+bool videoExtractor::extract(const char* inputFileName, const char* outputFileName){
     if(!openInputFile(inputFileName))
         return false;
 
-    if(!open_output_file(outputFileName))
+    if(!openOutputFile(outputFileName))
         return false;
 
     if(transcode() < 0)
@@ -55,13 +55,13 @@ bool videoExtractor::openInputFile(const char* inputFileName){
     return true;
 }
 
-bool videoExtractor::open_output_file(const char* outputFileName){
+bool videoExtractor::openOutputFile(const char* outputFileName){
     avformat_alloc_output_context2(&outformatCtx, NULL, NULL, outputFileName);
     outputFormat = outformatCtx->oformat;
 
     if (outputFormat->video_codec != AV_CODEC_ID_NONE) {
         // Add video stream to output format
-        videoStream = add_stream(&outVideoCodec, outputFormat->video_codec);
+        videoStream = addStream(&outVideoCodec, outputFormat->video_codec);
         if(videoStream == NULL)
             return false;
 
@@ -70,7 +70,7 @@ bool videoExtractor::open_output_file(const char* outputFileName){
 
     // open video codec
     if (avcodec_open2(outVideoCodecCtx, outVideoCodec, NULL)) {
-        qDebug() << "Could not open video codec: " << outVideoCodec->name;
+        printf("Could not open video codec: \s", outVideoCodec->name);
         return false;
     }
 
@@ -79,14 +79,14 @@ bool videoExtractor::open_output_file(const char* outputFileName){
     /* open the output file, if needed */
     if (!(outputFormat->flags & AVFMT_NOFILE)) {
         if(avio_open(&outformatCtx->pb, outputFileName, AVIO_FLAG_WRITE) < 0) {
-            qDebug() << "Could not open " << outputFileName;
+            printf("Could not open \s", outputFileName);
             return false;
         }
     }
 
     /* Write the stream header, if any. */
     if(avformat_write_header(outformatCtx, NULL) < 0) {
-        qDebug() << "Error occurred when opening output file";
+        printf("Error occurred when opening output file");
         return false;
     }
 
@@ -104,7 +104,7 @@ bool videoExtractor::transcode(){
             av_frame_unref(frame);
             gotFrame = 0;
             if(avcodec_decode_video2(inVideoCodecCtx, frame, &gotFrame, &packet) < 0) {
-                qDebug() << "Error decoding video frame.";
+                printf("Error decoding video frame.");
                 continue;
             }
 
@@ -125,24 +125,23 @@ bool videoExtractor::transcode(){
     return true;
 }
 
-AVStream* videoExtractor::add_stream(AVCodec **codec, enum AVCodecID codec_id){
+AVStream* videoExtractor::addStream(AVCodec **codec, enum AVCodecID codec_id){
   AVCodecContext *codecCtx;
   AVStream *stream;
 
   *codec = avcodec_find_encoder(codec_id);
 
   if (!(*codec)) {
-      qDebug() << "Could not find encoder for " << avcodec_get_name(codec_id);
+      printf("Could not find encoder for \s", avcodec_get_name(codec_id));
       return NULL;
   }
 
   stream = avformat_new_stream(outformatCtx, *codec);
   if (!stream) {
-      qDebug() << "Could not allocate stream";
+      printf("Could not allocate stream");
       return NULL;
   }
 
-  //stream->id = 0;
   codecCtx = stream->codec;
   codecCtx->bit_rate = inVideoCodecCtx->bit_rate;
   codecCtx->sample_fmt = inVideoCodecCtx->sample_fmt;
@@ -165,7 +164,7 @@ bool videoExtractor::writeVideoFrame(AVFrame *frame){
   packet.size = 0;
 
   if(avcodec_encode_video2(codec, &packet, frame, &gotPacket) < 0){
-      qDebug() << "Error encoding video frame.";
+      printf("Error encoding video frame.");
       return false;
   }
 
@@ -178,7 +177,7 @@ bool videoExtractor::writeVideoFrame(AVFrame *frame){
 
     /* Write the compressed frame to the media file. */
     if(av_interleaved_write_frame(outformatCtx, &packet) != 0) {
-        qDebug() << "Error while writing video frame: ";
+        printf("Error while writing video frame: ");
         return false;
     }
 
@@ -188,7 +187,7 @@ bool videoExtractor::writeVideoFrame(AVFrame *frame){
   return true;
 }
 
-void videoExtractor::flush_queue(AVCodecContext *codec){
+void videoExtractor::flushQueue(AVCodecContext *codec){
   AVPacket packet;
   av_init_packet(&packet);
   packet.data = NULL;
@@ -206,7 +205,7 @@ void videoExtractor::flush_queue(AVCodecContext *codec){
   av_interleaved_write_frame (outformatCtx, NULL);
 }
 
-void videoExtractor::avcodec_get_frame_defaults(AVFrame *frame){
+void videoExtractor::freeFrames(AVFrame *frame){
      // extended_data should explicitly be freed when needed, this code is unsafe currently
      // also this is not compatible to the <55 ABI/API
     if (frame->extended_data != frame->data && 0)

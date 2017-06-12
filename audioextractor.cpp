@@ -34,20 +34,20 @@ void audioExtractor::set_output_sample_fmt(){
   }
 }
 
-AVStream* audioExtractor::add_stream(AVCodec **codec, enum AVCodecID codec_id){
+AVStream* audioExtractor::addStream(AVCodec **codec, enum AVCodecID codec_id){
   AVCodecContext *codecCtx;
   AVStream *stream;
 
   *codec = avcodec_find_encoder(codec_id);
 
   if (!(*codec)) {
-      qDebug() << "Could not find encoder for " << avcodec_get_name(codec_id);
+      printf("Could not find encoder for \s", avcodec_get_name(codec_id));
       return NULL;
   }
 
   stream = avformat_new_stream(outformatCtx, *codec);
   if (!stream) {
-      qDebug() << "Could not allocate stream";
+      printf("Could not allocate stream");
       return NULL;
   }
 
@@ -61,7 +61,7 @@ AVStream* audioExtractor::add_stream(AVCodec **codec, enum AVCodecID codec_id){
   return stream;
 }
 
-bool audioExtractor::write_audio_frame(AVFrame *frame){
+bool audioExtractor::writeAudioFrame(AVFrame *frame){
   AVCodecContext *codec = outformatCtx->streams[0]->codec;
   AVPacket packet;
   int gotPacket = 0;
@@ -71,7 +71,7 @@ bool audioExtractor::write_audio_frame(AVFrame *frame){
   packet.size = 0;
 
   if(avcodec_encode_audio2(codec, &packet, frame, &gotPacket) < 0){
-      qDebug() << "Error encoding audio frame.";
+      printf("Error encoding audio frame.");
       return false;
   }
 
@@ -85,7 +85,7 @@ bool audioExtractor::write_audio_frame(AVFrame *frame){
 
     /* Write the compressed frame to the media file. */
     if(av_interleaved_write_frame(outformatCtx, &packet) != 0) {
-        qDebug() << "Error while writing audio frame: ";
+        printf("Error while writing audio frame: ");
         return false;
     }
 
@@ -95,7 +95,7 @@ bool audioExtractor::write_audio_frame(AVFrame *frame){
   return true;
 }
 
-void audioExtractor::flush_queue(AVCodecContext *codec){
+void audioExtractor::flushQueue(AVCodecContext *codec){
   AVPacket packet;
   av_init_packet(&packet);
   packet.data = NULL;
@@ -121,10 +121,10 @@ bool audioExtractor::transcode(){
 
     while(av_read_frame(informatCtx, &packet) >= 0){
         if(packet.stream_index == audioStreamIndex){
-            avcodec_get_frame_defaults(frame);
+            freeFrame(frame);
             gotFrame = 0;
             if(avcodec_decode_audio4(inAudioCodecCtx, frame, &gotFrame, &packet) < 0) {
-                qDebug() << "Error decoding audio frame.";
+                printf("Error decoding audio frame.");
                 continue;
             }
 
@@ -132,7 +132,7 @@ bool audioExtractor::transcode(){
                 frame->pts = AV_NOPTS_VALUE;
 
                 // Write the decoded and converted audio frame
-                if(!write_audio_frame(frame)) {
+                if(!writeAudioFrame(frame)) {
                   return false;
                 }
 
@@ -145,7 +145,7 @@ bool audioExtractor::transcode(){
     return true;
 }
 
-bool audioExtractor::open_input_file(const char* inputFileName){
+bool audioExtractor::openInputFile(const char* inputFileName){
   // Open input file
   if(avformat_open_input(&informatCtx, inputFileName, NULL, NULL) < 0)
     return false; // Couldn't open file
@@ -166,13 +166,13 @@ bool audioExtractor::open_input_file(const char* inputFileName){
   return true;
 }
 
-bool audioExtractor::open_output_file(const char* outputFileName){
+bool audioExtractor::openOutputFile(const char* outputFileName){
     avformat_alloc_output_context2(&outformatCtx, NULL, NULL, outputFileName);
     outputFormat = outformatCtx->oformat;
 
     if (outputFormat->audio_codec != AV_CODEC_ID_NONE) {
         // Add audio stream to output format
-        audioStream = add_stream(&outAudioCodec, outputFormat->audio_codec);
+        audioStream = addStream(&outAudioCodec, outputFormat->audio_codec);
         if(audioStream == NULL)
             return false;
 
@@ -183,7 +183,7 @@ bool audioExtractor::open_output_file(const char* outputFileName){
 
     // open audio codec
     if (avcodec_open2(outAudioCodecCtx, outAudioCodec, NULL)) {
-        qDebug() << "Could not open audio codec: " << outAudioCodec->name;
+        printf("Could not open audio codec: \s", outAudioCodec->name);
         return false;
     }
 
@@ -192,25 +192,25 @@ bool audioExtractor::open_output_file(const char* outputFileName){
     /* open the output file, if needed */
     if (!(outputFormat->flags & AVFMT_NOFILE)) {
         if(avio_open(&outformatCtx->pb, outputFileName, AVIO_FLAG_WRITE) < 0) {
-            qDebug() << "Could not open " << outputFileName;
+            printf( "Could not open \s", outputFileName);
             return false;
         }
     }
 
     /* Write the stream header, if any. */
     if(avformat_write_header(outformatCtx, NULL) < 0) {
-        qDebug() << "Error occurred when opening output file";
+        printf("Error occurred when opening output file");
         return false;
     }
 
     return true;
 }
 
-bool audioExtractor::convert(const char* inputFileName, const char* outputFileName){
-  if(!open_input_file(inputFileName))
+bool audioExtractor::extract(const char* inputFileName, const char* outputFileName){
+  if(!openInputFile(inputFileName))
     return false;
 
-  if(!open_output_file(outputFileName))
+  if(!openOutputFile(outputFileName))
     return false;
 
   if(transcode() < 0)
@@ -225,7 +225,7 @@ bool audioExtractor::convert(const char* inputFileName, const char* outputFileNa
   return true;
 }
 
-void audioExtractor::avcodec_get_frame_defaults(AVFrame *frame){
+void audioExtractor::freeFrame(AVFrame *frame){
      // extended_data should explicitly be freed when needed, this code is unsafe currently
      // also this is not compatible to the <55 ABI/API
     if (frame->extended_data != frame->data && 0)
